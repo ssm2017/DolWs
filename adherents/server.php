@@ -15,6 +15,8 @@ if (empty($conf->global->MAIN_MODULE_WEBSERVICES)) {
   exit;
 }
 
+$user->fetch(1);
+
 // Create the soap Object
 $server = new soap_server();
 $server->soap_defencoding='UTF-8';
@@ -23,8 +25,18 @@ $server->configureWSDL('WebServicesDolibarr',$ns);
 $server->wsdl->schemaTargetNamespace=$ns;
 
 // register methods
-$server->register('addAdherent',
+$server->register('createAdherent',
   array('data'=>'xsd:string'),
+  array('success'=>'xsd:int', 'message'=>'xsd:string', 'data'=>'xsd:string'),
+  $ns
+);
+$server->register('updateAdherent',
+  array('data'=>'xsd:string'),
+  array('success'=>'xsd:int', 'message'=>'xsd:string', 'data'=>'xsd:string'),
+  $ns
+);
+$server->register('getAdherentId',
+  array('field'=>'xsd:string', 'value'=>'xsd:string', 'where'=>'xsd:string'),
   array('success'=>'xsd:int', 'message'=>'xsd:string', 'data'=>'xsd:string'),
   $ns
 );
@@ -32,14 +44,39 @@ $server->register('addAdherent',
 // Return the results.
 $server->service($HTTP_RAW_POST_DATA);
 
-function addAdherent($data='') {
+function createAdherent($data='') {
   require_once("DolWsAdherents.php");
   $values = unserialize($data);
   $adherents = new DolWsAdherents();
-  $adherents->addAdherent($values);
+  $adherents->createAdherent($values);
   return array(
-    'success' => TRUE,
+    'success' => $adherents->success,
     'message' => $adherents->message,
     'data'    => $adherents->data,
   );
 }
+
+function updateAdherent($data='') {
+  require_once("DolWsAdherents.php");
+  $values = unserialize($data);
+  $adherents = new DolWsAdherents();
+  $adherents->updateAdherent($values);
+  return array(
+    'success' => $adherents->success,
+    'message' => $adherents->message,
+    'data'    => $adherents->data,
+  );
+}
+
+function getAdherentId($field, $value, $where) {
+  require_once("DolWsAdherents.php");
+  $adherents = new DolWsAdherents();
+  $adherents->getAdherentId($field, $value, $where);
+  return array(
+    'success' => $adherents->success,
+    'message' => $adherents->message,
+    'data'    => $adherents->data,
+  );
+}
+
+$db->close();

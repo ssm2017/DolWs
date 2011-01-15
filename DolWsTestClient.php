@@ -23,9 +23,25 @@ function listMethods() {
   print "<pre>";
   print_r($client->__getFunctions());
   print "</pre>";
+  try {
+    $client = new SoapClient(URI. '/webservices/DolWs/societe/server.php?wsdl');
+  } catch (SoapFault $fault) {
+    echo 'erreur : '.$fault;
+  }
+  print "<pre>";
+  print_r($client->__getFunctions());
+  print "</pre>";
+  try {
+    $client = new SoapClient(URI. '/webservices/DolWs/contrat/server.php?wsdl');
+  } catch (SoapFault $fault) {
+    echo 'erreur : '.$fault;
+  }
+  print "<pre>";
+  print_r($client->__getFunctions());
+  print "</pre>";
 }
 
-function addAdherent() {
+function createAdherent() {
   $random = generatePassword();
 
   try {
@@ -65,7 +81,71 @@ function addAdherent() {
   $values['label']          = 'Paiement cotisation par site fg';
   $values['num_chq']        = 'rrrrrr';
 
-  $return = $client->addAdherent(serialize($values));
+  $return = $client->createAdherent(serialize($values));
+  print "<pre>";
+  print_r($return);
+  print "</pre>";
+}
+
+function updateAdherent() {
+  $random = generatePassword();
+
+  try {
+    $client = new SoapClient(URI. '/webservices/DolWs/adherents/server.php?wsdl');
+  } catch (SoapFault $fault) {
+    echo 'erreur : '.$fault;
+  }
+
+  // fill values
+  $values = array();
+  $values['rowid']          = 23;
+  $values["typeid"]         = 1;
+  $values["civilite_id"]    = 0;
+  $values["nom"]            = $random;
+  $values["prenom"]         = $random;
+  $values["societe"]        = $random;
+  $values["adresse"]        = null;//$content_profile->field_profile_adresse[0]['street'];
+  $values["cp"]             = null;//$content_profile->field_profile_adresse[0]['postal_code'];
+  $values["ville"]          = null;//$content_profile->field_profile_adresse[0]['city'];
+  $values["departement_id"] = null;
+  $values["pays_id"]        = null;
+  $values["phone"]          = null;
+  $values["phone_perso"]    = null;
+  $values["phone_mobile"]   = null;
+  $values["member_email"]   = $random. '@'. $random. '.com';
+  $values["member_login"]   = 'aaa';
+  $values["password"]       = $random;
+  $values["photo"]          = null;
+  $values["comment"]        = null;
+  $values["morphy"]         = 1;
+  $values["cotisation"]     = 10;
+  $values["public"]         = null;
+  $values["userid"]         = null;
+  $values["socid"]          = null;
+  // payment
+  $values['accountid']      = 1;
+  $values['operation']      = 'PP';
+  $values['label']          = 'Paiement cotisation par site fg';
+  $values['num_chq']        = 'rrrrrr';
+
+  $return = $client->updateAdherent(serialize($values));
+  print "<pre>";
+  print_r($return);
+  print "</pre>";
+}
+
+function getAdherentId() {
+  try {
+    $client = new SoapClient(URI. '/webservices/DolWs/adherents/server.php?wsdl');
+  } catch (SoapFault $fault) {
+    echo 'erreur : '.$fault;
+  }
+
+  $field = 'login';
+  $value = "'aaa'";
+  $where = '';
+  
+  $return = $client->getAdherentId($field, $value, $where);
   print "<pre>";
   print_r($return);
   print "</pre>";
@@ -131,7 +211,7 @@ function addSociete() {
   print "</pre>";
 }
 
-function addContrat() {
+function createContrat() {
   $random = generatePassword();
 
   try {
@@ -151,7 +231,7 @@ function addContrat() {
   $values["remise_percent"]           = 0;
   $values["ref"]                      = null;
 
-  $return = $client->addContrat(serialize($values));
+  $return = $client->createContrat(serialize($values));
   print "<pre>";
   print_r($return);
   print "</pre>";

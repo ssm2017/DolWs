@@ -6,7 +6,8 @@ class DolWsAdherents {
   var $message  = '';
   var $data     = '';
 
-  function addAdherent($values) {
+  function createAdherent($values) {
+
     global $conf, $langs, $db;
     require_once(DOL_DOCUMENT_ROOT."/lib/member.lib.php");
     require_once(DOL_DOCUMENT_ROOT."/lib/company.lib.php");
@@ -23,10 +24,17 @@ class DolWsAdherents {
     $langs->load("bills");
     $langs->load("members");
     $langs->load("users");
-
+    
     $adh = new Adherent($db);
+    
+    // check if already exists
+    $adh->fetch_login($values["member_login"]);
+    if ($adh->id) {
+      $this->message .= "L'utilisateur existe déjà.<br/>\n";
+      $this->updateAdherent($values);
+      return;
+    }
     $adho = new AdherentOptions($db);
-    $this->message='';
 
     $datenaiss='';
     if (isset($values["naissday"]) && $values["naissday"]
@@ -187,6 +195,175 @@ class DolWsAdherents {
     else {
       $this->success = FALSE;
     }
-    $db->close();
+  }
+  function updateAdherent($values) {
+    global $conf, $langs, $db, $user;
+    require_once(DOL_DOCUMENT_ROOT."/lib/member.lib.php");
+    require_once(DOL_DOCUMENT_ROOT."/lib/company.lib.php");
+    require_once(DOL_DOCUMENT_ROOT."/lib/images.lib.php");
+    require_once(DOL_DOCUMENT_ROOT."/lib/functions2.lib.php");
+    require_once(DOL_DOCUMENT_ROOT."/adherents/class/adherent.class.php");
+    require_once(DOL_DOCUMENT_ROOT."/adherents/class/adherent_type.class.php");
+    require_once(DOL_DOCUMENT_ROOT."/adherents/class/adherent_options.class.php");
+    require_once(DOL_DOCUMENT_ROOT."/adherents/class/cotisation.class.php");
+    require_once(DOL_DOCUMENT_ROOT."/compta/bank/class/account.class.php");
+    require_once(DOL_DOCUMENT_ROOT."/core/class/html.formcompany.class.php");
+
+    $adh = new Adherent($db);
+    if (isset($values['rowid']) && $values['rowid'] > 0) {
+      $adh->fetch($values['rowid']);
+    }
+
+    //$adh->fetch_login($values["member_login"]);
+    if (!$adh->id) {
+      $this->message .= "L'utilisateur n'existe pas.<br/>\n";
+      $this->createAdherent($values);
+      return;
+    }
+
+    require_once(DOL_DOCUMENT_ROOT."/lib/files.lib.php");
+
+    $datenaiss='';
+    if (isset($values["naissday"]) && $values["naissday"]
+      && isset($values["naissmonth"]) && $values["naissmonth"]
+      && isset($values["naissyear"]) && $values["naissyear"]) {
+      $datenaiss=dol_mktime(12, 0, 0, $values["naissmonth"], $values["naissday"], $values["naissyear"]);
+    }
+
+    $datecotisation=time();
+    if (isset($values["reday"]) && isset($values["remonth"]) && isset($values["reyear"])) {
+      $datecotisation=dol_mktime(12, 0 , 0, $values["remonth"], $values["reday"], $values["reyear"]);
+    }
+
+    // Create new object
+    if ($adh->id > 0) {
+      $adh->oldcopy=dol_clone($adh);
+
+      // Change values
+      $adh->civilite_id = (isset($values["civilite_id"]) && trim($values["civilite_id"]) != $adh->civilite_id) ?trim($values["civilite_id"]) : $adh->civilite_id;
+      $adh->prenom      = (isset($values["prenom"]) && trim($values["prenom"]) != $adh->prenom) ?trim($values["prenom"]) : $adh->prenom;
+      $adh->nom         = (isset($values["nom"]) && trim($values["nom"]) != $adh->nom) ?trim($values["nom"]) : $adh->nom;
+      $adh->login       = (isset($values["login"]) && trim($values["login"]) != $adh->login) ?trim($values["login"]) : $adh->login;
+      $adh->pass        = (isset($values["pass"]) && trim($values["pass"]) != $adh->pass) ?trim($values["pass"]) : $adh->pass;
+
+      $adh->societe     = (isset($values["societe"]) && trim($values["societe"]) != $adh->societe) ?trim($values["societe"]) : $adh->societe;
+      $adh->adresse     = (isset($values["adresse"]) && trim($values["adresse"]) != $adh->adresse) ?trim($values["adresse"]) : $adh->adresse;
+      $adh->cp          = (isset($values["cp"]) && trim($values["cp"]) != $adh->cp) ?trim($values["cp"]) : $adh->cp;
+      $adh->ville       = (isset($values["ville"]) && trim($values["ville"]) != $adh->ville) ?trim($values["ville"]) : $adh->ville;
+
+      $adh->fk_departement = (isset($values["departement_id"]) && $values["departement_id"] != $adh->departement_id) ? $values["departement_id"] : $adh->departement_id;
+      $adh->pays_id        = (isset($values["pays"]) && $values["pays"] != $adh->pays) ? $values["pays"] : $adh->pays;
+
+      $adh->phone       = (isset($values["phone"]) && trim($values["phone"]) != $adh->phone) ?trim($values["phone"]) : $adh->phone;
+      $adh->phone_perso = (isset($values["phone_perso"]) && trim($values["phone_perso"]) != $adh->phone_perso) ?trim($values["phone_perso"]) : $adh->phone_perso;
+      $adh->phone_mobile= (isset($values["phone_mobile"]) && trim($values["phone_mobile"]) != $adh->phone_mobile) ?trim($values["phone_mobile"]) : $adh->phone_mobile;
+      $adh->email       = (isset($values["email"]) && trim($values["email"]) != $adh->email) ?trim($values["email"]) : $adh->email;
+      $adh->naiss       = $datenaiss;
+
+      $adh->typeid      = (isset($values["typeid"]) && $values["typeid"] != $adh->typeid) ? $values["typeid"] : $adh->typeid;
+      $adh->note        = (isset($values["comment"]) && trim($values["comment"]) != $adh->comment) ?trim($values["comment"]) : $adh->comment;
+      $adh->morphy      = (isset($values["morphy"]) && $values["morphy"] != $adh->morphy) ? $values["morphy"] : $adh->morphy;
+
+      $adh->amount      = (isset($values["amount"]) && $values["amount"] != $adh->amount) ? $values["amount"] : $adh->amount;
+
+      // Get status and public property
+      $adh->statut      = (isset($values["statut"]) && $values["statut"] != $adh->statut) ? $values["statut"] : $adh->statut;
+      $adh->public      = (isset($values["public"]) && $values["public"] != $adh->public) ? $values["public"] : $adh->public;
+
+      $adh->cotisation  = isset($values["cotisation"]) ? $values["cotisation"] : 0;
+
+      foreach($values as $key => $value) {
+        if (preg_match("/^options_/",$key)) {
+          //escape values from POST, at least with addslashes, to avoid obvious SQL injections
+          //(array_options is directly input in the DB in adherent.class.php::update())
+          $adh->array_options[$key]=addslashes($values[$key]);
+        }
+      }
+
+      // Check if we need to also synchronize user information
+      $nosyncuser=0;
+      if ($adh->user_id) {  // If linked to a user
+        if ($user->id != $adh->user_id && empty($user->rights->user->user->creer)) $nosyncuser=1;   // Disable synchronizing
+      }
+
+      // Check if we need to also synchronize password information
+      $nosyncuserpass=0;
+      if ($adh->user_id) {  // If linked to a user
+        if ($user->id != $adh->user_id && empty($user->rights->user->user->password)) $nosyncuserpass=1;  // Disable synchronizing
+      }
+
+      $result = $adh->update($user, 0, $nosyncuser, $nosyncuserpass);
+      if ($result >= 0 && ! sizeof($adh->errors)) {
+        $this->message .= "L'adhérent a été mis à jour.<br/>\n";
+        if ($adh->cotisation > 0) {
+
+          $crowid = $adh->cotisation($datecotisation, $adh->cotisation);
+
+          // insertion dans la gestion banquaire si configure pour
+          if ($conf->global->ADHERENT_BANK_USE) {
+
+            $dateop = time();
+            $amount = $adh->cotisation;
+            $acct   = new Account($db,$values["accountid"]);
+            $insertid = $acct->addline($dateop, $values["operation"], $values["label"], $amount, $values["num_chq"], '', $user);
+            if ($insertid == '') {
+              $this->message .= "Erreur ajout d'entrée banquaire."."<br>\n";
+              dol_print_error($db);
+            }
+            else {
+              // met a jour la table cotisation
+              $sql ="UPDATE ".MAIN_DB_PREFIX."cotisation";
+              $sql.=" SET fk_bank=$insertid WHERE rowid=$crowid ";
+              $result = $db->query($sql);
+              if ($result) {
+                $this->message .= 'Cotisation ajoutée.'."<br>\n";
+              }
+              else {
+                $this->message .= 'Erreur ajout de cotisation.'."<br>\n";
+                dol_print_error($db);
+              }
+            }
+          }
+          else {
+            $this->message .= 'Cotisation inactive.'."<br>\n";
+          }
+        }
+      }
+      else {
+        if ($adh->error) {
+          $errmsg=$adh->error;
+        }
+        else {
+          foreach($adh->errors as $error) {
+            if ($errmsg) $errmsg.='<br>';
+            $errmsg.=$error;
+          }
+        }
+      }
+      $this->message .= $errmsg;
+    }
+  }
+  function getAdherentId($field, $value, $where) {
+    global $conf, $langs, $db, $user;
+
+    if (empty($where)) {
+      $where = $field. "=". $value;
+    }
+
+    $value = $values['value'];
+    $sql = "SELECT rowid FROM ".MAIN_DB_PREFIX."adherent WHERE $where";
+    $result = $db->query($sql);
+    if ($result) {
+      $rowid  = $db->fetch_object($result)->rowid;
+      if ($rowid) {
+        $this->success = TRUE;
+        $this->message .= 'Success';
+        $this->data = $rowid;
+      }
+    }
+    else {
+      $this->success = FALSE;
+      $this->message .= 'error : '. $db->error();
+    }
   }
 }

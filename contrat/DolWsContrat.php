@@ -5,7 +5,7 @@ class DolWsContrat {
   var $message  = '';
   var $data     = '';
 
-  function addContrat($values) {
+  function createContrat($values) {
     global $conf, $langs, $db, $user;
     require_once(DOL_DOCUMENT_ROOT.'/lib/contract.lib.php');
     if ($conf->projet->enabled)  require_once(DOL_DOCUMENT_ROOT."/projet/class/project.class.php");
@@ -80,8 +80,6 @@ class DolWsContrat {
     $contrat->remise_percent = trim($values["remise_percent"]);
     $contrat->ref            = trim($values["ref"]);
 
-    $user->id = 1;
-
     $result = $contrat->create($user,$langs,$conf);
     if ($result > 0) {
       $this->success = TRUE;
@@ -90,7 +88,6 @@ class DolWsContrat {
     else {
       $this->message .= $contrat->error. '<br/>\n';
     }
-    $db->close();
   }
 
   function addLigne($values) {
@@ -220,7 +217,6 @@ class DolWsContrat {
         $this->success = FALSE;
         $this->message .= 'Error : '.$contrat->error.'<br/>\n';
       }
-      $db->close();
     }
     else {
       $this->message .= "Prix et quantité requis.".'<br/>\n';

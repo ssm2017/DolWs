@@ -120,13 +120,11 @@ class DolWsSociete {
       else {
         $this->success = FALSE;
         $this->message .= "La société n'a pas été crée car : ". $soc->error. "<br>\n";
-        $db->close();
         return;
       }
 
       if ($result >= 0) {
         $db->commit();
-        $db->close();
         $this->message .= 'La société a été créée. ID = '. $result->id. "<br>\n";
         return;
       }
@@ -136,6 +134,5 @@ class DolWsSociete {
         $this->message .= $langs->trans($soc->error). "<br>\n";
       }
     }
-    $db->close();
   }
 }

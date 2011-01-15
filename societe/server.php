@@ -15,6 +15,8 @@ if (empty($conf->global->MAIN_MODULE_WEBSERVICES)) {
   exit;
 }
 
+$user->fetch(1);
+
 // Create the soap Object
 $server = new soap_server();
 $server->soap_defencoding='UTF-8';
@@ -38,8 +40,10 @@ function addSociete($data='') {
   $societe = new DolWsSociete();
   $societe->addSociete($values);
   return array(
-    'success' => TRUE,
+    'success' => $societe->success,
     'message' => $societe->message,
     'data'    => $societe->data,
   );
 }
+
+$db->close();
