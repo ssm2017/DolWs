@@ -1,4 +1,20 @@
 <?php
+global $langs;
+require_once(DOL_DOCUMENT_ROOT."/lib/member.lib.php");
+require_once(DOL_DOCUMENT_ROOT."/lib/company.lib.php");
+require_once(DOL_DOCUMENT_ROOT."/lib/images.lib.php");
+require_once(DOL_DOCUMENT_ROOT."/lib/functions2.lib.php");
+require_once(DOL_DOCUMENT_ROOT."/adherents/class/adherent.class.php");
+require_once(DOL_DOCUMENT_ROOT."/adherents/class/adherent_type.class.php");
+require_once(DOL_DOCUMENT_ROOT."/adherents/class/adherent_options.class.php");
+require_once(DOL_DOCUMENT_ROOT."/adherents/class/cotisation.class.php");
+require_once(DOL_DOCUMENT_ROOT."/compta/bank/class/account.class.php");
+
+$langs->load("companies");
+$langs->load("bills");
+$langs->load("members");
+$langs->load("users");
+$langs->load("errors");
 
 class DolWsAdherents {
 
@@ -7,30 +23,14 @@ class DolWsAdherents {
   var $data     = '';
 
   function createAdherent($values) {
-
     global $conf, $langs, $db;
-    require_once(DOL_DOCUMENT_ROOT."/lib/member.lib.php");
-    require_once(DOL_DOCUMENT_ROOT."/lib/company.lib.php");
-    require_once(DOL_DOCUMENT_ROOT."/lib/images.lib.php");
-    require_once(DOL_DOCUMENT_ROOT."/lib/functions2.lib.php");
-    require_once(DOL_DOCUMENT_ROOT."/adherents/class/adherent.class.php");
-    require_once(DOL_DOCUMENT_ROOT."/adherents/class/adherent_type.class.php");
-    require_once(DOL_DOCUMENT_ROOT."/adherents/class/adherent_options.class.php");
-    require_once(DOL_DOCUMENT_ROOT."/adherents/class/cotisation.class.php");
-    require_once(DOL_DOCUMENT_ROOT."/compta/bank/class/account.class.php");
-    require_once(DOL_DOCUMENT_ROOT."/core/class/html.formcompany.class.php");
 
-    $langs->load("companies");
-    $langs->load("bills");
-    $langs->load("members");
-    $langs->load("users");
-    
     $adh = new Adherent($db);
     
     // check if already exists
     $adh->fetch_login($values["member_login"]);
     if ($adh->id) {
-      $this->message .= "L'utilisateur existe déjà.<br/>\n";
+      $this->message .= "createAdherent : L'utilisateur existe déjà.<br/>\n";
       $this->updateAdherent($values);
       return;
     }
@@ -40,12 +40,12 @@ class DolWsAdherents {
     if (isset($values["naissday"]) && $values["naissday"]
       && isset($values["naissmonth"]) && $values["naissmonth"]
       && isset($values["naissyear"]) && $values["naissyear"]) {
-      $datenaiss=dol_mktime(12, 0, 0, $values["naissmonth"], $values["naissday"], $values["naissyear"]);
+      $datenaiss = dol_mktime(12, 0, 0, $values["naissmonth"], $values["naissday"], $values["naissyear"]);
     }
 
     $datecotisation=time();
     if (isset($values["reday"]) && isset($values["remonth"]) && isset($values["reyear"])) {
-      $datecotisation=dol_mktime(12, 0 , 0, $values["remonth"], $values["reday"], $values["reyear"]);
+      $datecotisation = dol_mktime(12, 0 , 0, $values["remonth"], $values["reday"], $values["reyear"]);
     }
 
     $adh->cotisation  = $values["cotisation"];
@@ -85,14 +85,16 @@ class DolWsAdherents {
 
     // Check parameters
     if (empty($adh->morphy) ||$adh->morphy == "-1") {
-      $error++;
-      $this->message .= $langs->trans("ErrorFieldRequired",$langs->transnoentitiesnoconv("Person"))."<br>\n";
+      $this->message .= 'createAdherent : '. $langs->trans("ErrorFieldRequired",$langs->transnoentitiesnoconv("Person"))."<br>\n";
+      $this->success = FALSE;
+      return;
     }
 
     // Test si le login existe deja
     if (empty($adh->login)) {
-      $error++;
-      $this->message .= $langs->trans("ErrorFieldRequired",$langs->trans("Login"))."<br>\n";
+      $this->message .= 'createAdherent : '. $langs->trans("ErrorFieldRequired",$langs->trans("Login"))."<br>\n";
+      $this->success = FALSE;
+      return;
     }
     else {
       $sql = "SELECT login FROM ".MAIN_DB_PREFIX."adherent WHERE login='".$adh->login."'";
@@ -101,113 +103,103 @@ class DolWsAdherents {
         $num = $db->num_rows($result);
       }
       if ($num) {
-        $error++;
-        $langs->load("errors");
-        $this->message .= $langs->trans("ErrorLoginAlreadyExists",$login)."<br>\n";
+        $this->message .= 'createAdherent : '. $langs->trans("ErrorLoginAlreadyExists",$login)."<br>\n";
+        $this->success = FALSE;
+        return;
       }
     }
 
     if (empty($adh->nom)) {
-      $error++;
       $langs->load("errors");
-      $this->message .= $langs->trans("ErrorFieldRequired",$langs->transnoentities("Lastname"))."<br>\n";
+      $this->message .= 'createAdherent : '. $langs->trans("ErrorFieldRequired",$langs->transnoentities("Lastname"))."<br>\n";
+      $this->success = FALSE;
+      return;
     }
 
     if ($adh->morphy != 'mor' && (!isset($adh->prenom) || $adh->prenom=='')) {
-      $error++;
       $langs->load("errors");
-      $this->message .= $langs->trans("ErrorFieldRequired",$langs->transnoentities("Firstname"))."<br>\n";
+      $this->message .= 'createAdherent : '. $langs->trans("ErrorFieldRequired",$langs->transnoentities("Firstname"))."<br>\n";
+      $this->success = FALSE;
+      return;
     }
 
     if (! ($adh->typeid > 0)) {  // Keep () before !
-      $error++;
-      $this->message .= $langs->trans("ErrorFieldRequired",$langs->transnoentitiesnoconv("Type"))."<br>\n";
+      $this->message .= 'createAdherent : '. $langs->trans("ErrorFieldRequired",$langs->transnoentitiesnoconv("Type"))."<br>\n";
+      $this->success = FALSE;
+      return;
     }
 
     if ($conf->global->ADHERENT_MAIL_REQUIRED && ! isValidEMail($adh->email)) {
-      $error++;
       $langs->load("errors");
-      $this->message .= $langs->trans("ErrorBadEMail",$adh->email)."<br>\n";
-      $this->message .= $adh->email."<br>\n";
+      $this->message .= 'createAdherent : '. $langs->trans("ErrorBadEMail",$adh->email)."<br>\n";
+      $this->message .= 'createAdherent : '. $adh->email."<br>\n";
+      $this->success = FALSE;
+      return;
     }
 
     if (empty($adh->pass)) {
-      $error++;
-      $this->message .= $langs->trans("ErrorFieldRequired",$langs->transnoentities("Password"))."<br>\n";
+      $this->message .= 'createAdherent : '. $langs->trans("ErrorFieldRequired",$langs->transnoentities("Password"))."<br>\n";
+      $this->success = FALSE;
+      return;
     }
 
-    if (isset($adh->public)) $adh->public=1;
+    if (isset($adh->public)) $adh->public = 1;
 
-    if (! $error) {
+    $db->begin();
+    $result = $adh->create($user);
 
-      $db->begin();
-      $result = $adh->create($user);
+    if ($result > 0) {
 
-      if ($result > 0) {
+      if ($adh->cotisation > 0) {
 
-        if ($adh->cotisation > 0) {
+        $crowid = $adh->cotisation($datecotisation, $adh->cotisation);
 
-          $crowid = $adh->cotisation($datecotisation, $adh->cotisation);
+        // insertion dans la gestion banquaire si configure pour
+        if ($conf->global->ADHERENT_BANK_USE) {
 
-          // insertion dans la gestion banquaire si configure pour
-          if ($conf->global->ADHERENT_BANK_USE) {
-
-            $dateop = time();
-            $amount = $adh->cotisation;
-            $acct   = new Account($db,$values["accountid"]);
-            $insertid = $acct->addline($dateop, $values["operation"], $values["label"], $amount, $values["num_chq"], '', $user);
-            if ($insertid == '') {
-              $this->message .= "Erreur ajout d'entrée banquaire."."<br>\n";
-              dol_print_error($db);
-            }
-            else {
-              // met a jour la table cotisation
-              $sql ="UPDATE ".MAIN_DB_PREFIX."cotisation";
-              $sql.=" SET fk_bank=$insertid WHERE rowid=$crowid ";
-              $result = $db->query($sql);
-              if ($result) {
-                $this->message .= 'Cotisation ajoutée.'."<br>\n";
-              }
-              else {
-                $this->message .= 'Erreur ajout de cotisation.'."<br>\n";
-                dol_print_error($db);
-              }
-            }
+          $dateop = time();
+          $amount = $adh->cotisation;
+          $acct   = new Account($db,$values["accountid"]);
+          $insertid = $acct->addline($dateop, $values["operation"], $values["label"], $amount, $values["num_chq"], '', $user);
+          if ($insertid == '') {
+            $this->message .= "Erreur ajout d'entrée banquaire."."<br>\n";
+            dol_print_error($db);
           }
           else {
-            $this->message .= 'Cotisation inactive.'."<br>\n";
+            // met a jour la table cotisation
+            $sql ="UPDATE ".MAIN_DB_PREFIX."cotisation";
+            $sql.=" SET fk_bank=$insertid WHERE rowid=$crowid ";
+            $result = $db->query($sql);
+            if ($result) {
+              $this->message .= 'createAdherent : '. 'Cotisation ajoutée.'."<br>\n";
+            }
+            else {
+              $this->message .= 'createAdherent : '. 'Erreur ajout de cotisation.'."<br>\n";
+              dol_print_error($db);
+            }
           }
         }
         else {
-          $this->message .= 'Cotisation inferieure a 1.'. "<br>\n";
+          $this->message .= 'createAdherent : '. 'Cotisation inactive.'."<br>\n";
         }
-        
-        $db->commit();
-        $rowid  = $adh->id;
-        $this->message .= 'Adherent ajouté. ID = '. $rowid. "<br>\n";
       }
       else {
-        $db->rollback();
-        if ($adh->error) $this->message .= $adh->error;
-        else $this->message .= $adh->errors[0];
+        $this->message .= 'createAdherent : '. 'Cotisation inferieure a 1.'. "<br>\n";
       }
+      
+      $db->commit();
+      $rowid  = $adh->id;
+      $this->message .= 'createAdherent : '. "Adherent ajouté.<br>\n";
+      $this->data = $rowid;
     }
     else {
-      $this->success = FALSE;
+      $db->rollback();
+      if ($adh->error) $this->message .= 'createAdherent : '. $adh->error;
+      else $this->message .= 'createAdherent : '. $adh->errors[0];
     }
   }
   function updateAdherent($values) {
     global $conf, $langs, $db, $user;
-    require_once(DOL_DOCUMENT_ROOT."/lib/member.lib.php");
-    require_once(DOL_DOCUMENT_ROOT."/lib/company.lib.php");
-    require_once(DOL_DOCUMENT_ROOT."/lib/images.lib.php");
-    require_once(DOL_DOCUMENT_ROOT."/lib/functions2.lib.php");
-    require_once(DOL_DOCUMENT_ROOT."/adherents/class/adherent.class.php");
-    require_once(DOL_DOCUMENT_ROOT."/adherents/class/adherent_type.class.php");
-    require_once(DOL_DOCUMENT_ROOT."/adherents/class/adherent_options.class.php");
-    require_once(DOL_DOCUMENT_ROOT."/adherents/class/cotisation.class.php");
-    require_once(DOL_DOCUMENT_ROOT."/compta/bank/class/account.class.php");
-    require_once(DOL_DOCUMENT_ROOT."/core/class/html.formcompany.class.php");
 
     $adh = new Adherent($db);
     if (isset($values['rowid']) && $values['rowid'] > 0) {
@@ -216,7 +208,7 @@ class DolWsAdherents {
 
     //$adh->fetch_login($values["member_login"]);
     if (!$adh->id) {
-      $this->message .= "L'utilisateur n'existe pas.<br/>\n";
+      $this->message .= 'updateAdherent : '. "L'utilisateur n'existe pas.<br/>\n";
       $this->createAdherent($values);
       return;
     }
@@ -294,7 +286,7 @@ class DolWsAdherents {
 
       $result = $adh->update($user, 0, $nosyncuser, $nosyncuserpass);
       if ($result >= 0 && ! sizeof($adh->errors)) {
-        $this->message .= "L'adhérent a été mis à jour.<br/>\n";
+        $this->message .= 'updateAdherent : '. "L'adhérent a été mis à jour.<br/>\n";
         if ($adh->cotisation > 0) {
 
           $crowid = $adh->cotisation($datecotisation, $adh->cotisation);
@@ -307,7 +299,7 @@ class DolWsAdherents {
             $acct   = new Account($db,$values["accountid"]);
             $insertid = $acct->addline($dateop, $values["operation"], $values["label"], $amount, $values["num_chq"], '', $user);
             if ($insertid == '') {
-              $this->message .= "Erreur ajout d'entrée banquaire."."<br>\n";
+              $this->message .= 'updateAdherent : '. "Erreur ajout d'entrée banquaire."."<br>\n";
               dol_print_error($db);
             }
             else {
@@ -316,16 +308,16 @@ class DolWsAdherents {
               $sql.=" SET fk_bank=$insertid WHERE rowid=$crowid ";
               $result = $db->query($sql);
               if ($result) {
-                $this->message .= 'Cotisation ajoutée.'."<br>\n";
+                $this->message .= 'updateAdherent : '. 'Cotisation ajoutée.'."<br>\n";
               }
               else {
-                $this->message .= 'Erreur ajout de cotisation.'."<br>\n";
+                $this->message .= 'updateAdherent : '. 'Erreur ajout de cotisation.'."<br>\n";
                 dol_print_error($db);
               }
             }
           }
           else {
-            $this->message .= 'Cotisation inactive.'."<br>\n";
+            $this->message .= 'updateAdherent : '. 'Cotisation inactive.'."<br>\n";
           }
         }
       }
@@ -343,27 +335,146 @@ class DolWsAdherents {
       $this->message .= $errmsg;
     }
   }
-  function getAdherentId($field, $value, $where) {
+  function updateNote($adh, $note) {
+    global $user;
+    $db->begin();
+
+    $res = $adh->update_note($note, $user);
+    if ($res < 0) {
+      $this->message .= 'updateAdherent : '. 'Erreur en mettant à jour une note. : '. $adh->error.'<br/>\n';
+      $db->rollback();
+    }
+    else {
+      $db->commit();
+      $this->message .= 'updateAdherent : '. 'Note mise à jour.<br/>\n';
+    }
+  }
+  function createCardSubscription($values) {
+    global $conf, $langs, $db;
+    $langs->load("banks");
+
+    $adh = new Adherent($db);
+    $adho = new AdherentOptions($db);
+    $adht = new AdherentType($db);
+
+    //$adh->id  = $values['adhid'];
+    $result   = $adh->fetch($values['adhid']);
+    if ($result < 1) {
+      $this->success = FALSE;
+      $this->message .= 'createCardSubscription : '. 'Erreur : '. $adh->error. '<br/>\n';
+      $this->data = $values['adhid'];
+      return;
+    }
+
+    $adht->fetch($adh->typeid);
+
+    // Subscription informations
+    $datecotisation = 0;
+    $datesubend     = 0;
+    if (isset($values["reyear"]) && isset($values["remonth"]) && isset($values["reday"])) {
+      $datecotisation = dol_mktime(0, 0, 0, $values["remonth"], $values["reday"], $values["reyear"]);
+    }
+    if (isset($values["endyear"]) && isset($values["endmonth"]) && isset($values["endday"])) {
+      $datesubend = dol_mktime(0, 0, 0, $values["endmonth"], $values["endday"], $values["endyear"]);
+    }
+
+    if (!$datecotisation) {
+      $this->success = FALSE;
+      $this->message .= 'createCardSubscription : '. $langs->trans("BadDateFormat"). '<br/>\n';
+      $this->data = $datecotisation;
+      return;
+    }
+    if (!$datesubend) {
+      $datesubend=dol_time_plus_duree(dol_time_plus_duree($datecotisation,$defaultdelay,$defaultdelayunit),-1,'d');
+    }
+
+    // Payment informations
+    $cotisation       = $values["cotisation"]; // Amount of subscription
+    $label            = $values["label"];
+    $accountid        = $values["accountid"];
+    $operation        = $values["operation"]; // Payment mode
+    $num_chq          = $values["num_chq"];
+    $emetteur_nom     = $values["chqemetteur"];
+    $emetteur_banque  = $values["chqbank"];
+
+    if ($adht->cotisation) { // Type adherent soumis a cotisation 
+      if (!($values["cotisation"] > 0)) {
+        // If field is '' or not a numeric value
+        $this->success = FALSE;
+        $this->message .= 'createCardSubscription : '. $langs->trans("ErrorFieldRequired",$langs->transnoentities("Amount")). '<br/>\n';
+        return;
+      }
+      else {
+        if ($conf->banque->enabled && $conf->global->ADHERENT_BANK_USE) {
+          if ($values["cotisation"]) {
+            if (!$values["label"] || !$values["operation"] || !$values["accountid"]) {
+              $this->success = FALSE;
+              if (!$values["label"])     $this->message .= 'createCardSubscription : '. $langs->trans("ErrorFieldRequired",$langs->transnoentities("Label")). '<br/>\n';
+              if (!$values["operation"]) $this->message .= 'createCardSubscription : '. $langs->trans("ErrorFieldRequired",$langs->transnoentities("PaymentMode")). '<br/>\n';
+              if (!$values["accountid"]) $this->message .= 'createCardSubscription : '. $langs->trans("ErrorFieldRequired",$langs->transnoentities("FinancialAccount")). '<br/>\n';
+              return;
+            }
+          }
+          else {
+            $this->success = FALSE;
+            if ($values["accountid"])   $this->message .= 'createCardSubscription : '. $langs->trans("ErrorDoNotProvideAccountsIfNullAmount"). '<br/>\n';
+          }
+        }
+      }
+    }
+
+    $db->begin();
+
+    $crowid = $adh->cotisation($datecotisation, $cotisation, $accountid, $operation, $label, $num_chq, $emetteur_nom, $emetteur_banque, $datesubend);
+
+    if ($crowid > 0) {
+      $db->commit();
+      $this->success = TRUE;
+      $this->message .= 'createCardSubscription : '. 'Cotisation ajoutée avec succes.'. '<br/>\n';
+      $this->data = $crowid;
+      // Envoi mail
+      if ($values["sendmail"]) {
+        $result = $adh->send_an_email($conf->global->ADHERENT_MAIL_COTIS,$conf->global->ADHERENT_MAIL_COTIS_SUBJECT,array(),array(),array(),"","",0,-1);
+        if ($result < 0) $this->message .= 'createCardSubscription : '. $adh->error. '<br/>\n';
+      }
+    }
+    else {
+      $db->rollback();
+      $this->success = FALSE;
+      $this->message .= 'createCardSubscription : '. 'Erreur : '. $adh->error. '<br/>\n';
+    }
+  }
+  function getAdherentId($field, $value, $where = '', $options = FALSE) {
     global $conf, $langs, $db, $user;
 
     if (empty($where)) {
       $where = $field. "=". $value;
     }
 
-    $value = $values['value'];
-    $sql = "SELECT rowid FROM ".MAIN_DB_PREFIX."adherent WHERE $where";
+    if ($options) {
+      $sql = "SELECT fk_member FROM ".MAIN_DB_PREFIX. "adherent_options WHERE $where";
+    }
+    else {
+      $sql = "SELECT rowid FROM ".MAIN_DB_PREFIX. "adherent WHERE $where";
+    }
+
     $result = $db->query($sql);
     if ($result) {
-      $rowid  = $db->fetch_object($result)->rowid;
+      if ($options) {
+        $rowid  = $db->fetch_object($result)->fk_member;
+      }
+      else {
+        $rowid  = $db->fetch_object($result)->rowid;
+      }
       if ($rowid) {
         $this->success = TRUE;
-        $this->message .= 'Success';
+        $this->message .= 'getAdherentId : '. 'Success'. "<br>\n";
         $this->data = $rowid;
       }
     }
     else {
       $this->success = FALSE;
-      $this->message .= 'error : '. $db->error();
+      $this->message .= 'getAdherentId : '. 'error : '. $db->error(). "<br>\n";
     }
   }
 }

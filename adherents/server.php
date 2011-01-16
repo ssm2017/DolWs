@@ -27,24 +27,24 @@ $server->wsdl->schemaTargetNamespace=$ns;
 // register methods
 $server->register('createAdherent',
   array('data'=>'xsd:string'),
-  array('success'=>'xsd:int', 'message'=>'xsd:string', 'data'=>'xsd:string'),
+  array('success'=>'xsd:boolean', 'message'=>'xsd:string', 'data'=>'xsd:string'),
   $ns
 );
 $server->register('updateAdherent',
   array('data'=>'xsd:string'),
-  array('success'=>'xsd:int', 'message'=>'xsd:string', 'data'=>'xsd:string'),
+  array('success'=>'xsd:boolean', 'message'=>'xsd:string', 'data'=>'xsd:string'),
   $ns
 );
 $server->register('getAdherentId',
-  array('field'=>'xsd:string', 'value'=>'xsd:string', 'where'=>'xsd:string'),
-  array('success'=>'xsd:int', 'message'=>'xsd:string', 'data'=>'xsd:string'),
+  array('field'=>'xsd:string', 'value'=>'xsd:string', 'where'=>'xsd:string', 'options'=>'xsd:boolean'),
+  array('success'=>'xsd:boolean', 'message'=>'xsd:string', 'data'=>'xsd:string'),
   $ns
 );
 
 // Return the results.
 $server->service($HTTP_RAW_POST_DATA);
 
-function createAdherent($data='') {
+function createAdherent($data) {
   require_once("DolWsAdherents.php");
   $values = unserialize($data);
   $adherents = new DolWsAdherents();
@@ -56,7 +56,7 @@ function createAdherent($data='') {
   );
 }
 
-function updateAdherent($data='') {
+function updateAdherent($data) {
   require_once("DolWsAdherents.php");
   $values = unserialize($data);
   $adherents = new DolWsAdherents();
@@ -68,10 +68,10 @@ function updateAdherent($data='') {
   );
 }
 
-function getAdherentId($field, $value, $where) {
+function getAdherentId($field, $value, $where, $options) {
   require_once("DolWsAdherents.php");
   $adherents = new DolWsAdherents();
-  $adherents->getAdherentId($field, $value, $where);
+  $adherents->getAdherentId($field, $value, $where, $options);
   return array(
     'success' => $adherents->success,
     'message' => $adherents->message,

@@ -20,18 +20,12 @@ $user->fetch(1);
 // Create the soap Object
 $server = new soap_server();
 $server->soap_defencoding='UTF-8';
-$ns='DolWsContrat';
+$ns='DolWsContact';
 $server->configureWSDL('WebServicesDolibarr',$ns);
 $server->wsdl->schemaTargetNamespace=$ns;
 
 // register methods
-$server->register('createContrat',
-  array('data'=>'xsd:string'),
-  array('success'=>'xsd:boolean', 'message'=>'xsd:string', 'data'=>'xsd:string'),
-  $ns
-);
-
-$server->register('addLigne',
+$server->register('createContact',
   array('data'=>'xsd:string'),
   array('success'=>'xsd:boolean', 'message'=>'xsd:string', 'data'=>'xsd:string'),
   $ns
@@ -40,27 +34,15 @@ $server->register('addLigne',
 // Return the results.
 $server->service($HTTP_RAW_POST_DATA);
 
-function createContrat($data) {
-  require_once("DolWsContrat.php");
+function createContact($data) {
+  require_once("DolWsContact.php");
   $values = unserialize($data);
-  $contrat = new DolWsContrat();
-  $contrat->createContrat($values);
+  $societe = new DolWsContact();
+  $societe->createContact($values);
   return array(
-    'success' => $contrat->success,
-    'message' => $contrat->message,
-    'data'    => $contrat->data,
-  );
-}
-
-function addLigne($data) {
-  require_once("DolWsContrat.php");
-  $values = unserialize($data);
-  $contrat = new DolWsContrat();
-  $contrat->addLigne($values);
-  return array(
-    'success' => $contrat->success,
-    'message' => $contrat->message,
-    'data'    => $contrat->data,
+    'success' => $societe->success,
+    'message' => $societe->message,
+    'data'    => $societe->data,
   );
 }
 

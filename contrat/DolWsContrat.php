@@ -1,4 +1,16 @@
 <?php
+global $conf, $langs;
+require_once(DOL_DOCUMENT_ROOT.'/lib/contract.lib.php');
+if ($conf->projet->enabled)  require_once(DOL_DOCUMENT_ROOT."/projet/class/project.class.php");
+if ($conf->propal->enabled)  require_once(DOL_DOCUMENT_ROOT."/comm/propal/class/propal.class.php");
+if ($conf->projet->enabled)  require_once(DOL_DOCUMENT_ROOT."/lib/project.lib.php");
+if ($conf->contrat->enabled) require_once(DOL_DOCUMENT_ROOT."/contrat/class/contrat.class.php");
+
+$langs->load("contracts");
+$langs->load("orders");
+$langs->load("companies");
+$langs->load("bills");
+$langs->load("products");
 
 class DolWsContrat {
   var $success  = FALSE;
@@ -7,17 +19,6 @@ class DolWsContrat {
 
   function createContrat($values) {
     global $conf, $langs, $db, $user;
-    require_once(DOL_DOCUMENT_ROOT.'/lib/contract.lib.php');
-    if ($conf->projet->enabled)  require_once(DOL_DOCUMENT_ROOT."/projet/class/project.class.php");
-    if ($conf->propal->enabled)  require_once(DOL_DOCUMENT_ROOT."/comm/propal/class/propal.class.php");
-    if ($conf->contrat->enabled) require_once(DOL_DOCUMENT_ROOT."/contrat/class/contrat.class.php");
-    if ($conf->projet->enabled)  require_once(DOL_DOCUMENT_ROOT."/lib/project.lib.php");
-
-    $langs->load("contracts");
-    $langs->load("orders");
-    $langs->load("companies");
-    $langs->load("bills");
-    $langs->load("products");
 
     $usehm = $conf->global->MAIN_USE_HOURMIN_IN_DATE_RANGE;
 
@@ -83,26 +84,17 @@ class DolWsContrat {
     $result = $contrat->create($user,$langs,$conf);
     if ($result > 0) {
       $this->success = TRUE;
-      $this->message .= 'Le contrat a été créé. ID = '. $result->id. '<br/>\n';
+      $this->message .= 'createContrat : '. 'Le contrat a été créé.<br/>\n';
+      $this->data = $contrat->id;
     }
     else {
-      $this->message .= $contrat->error. '<br/>\n';
+      $this->success = FALSE;
+      $this->message .= 'createContrat : '. 'Erreur : '. $contrat->error. '<br/>\n';
     }
   }
 
   function addLigne($values) {
     global $conf, $langs, $db, $user;
-    require_once(DOL_DOCUMENT_ROOT.'/lib/contract.lib.php');
-    if ($conf->projet->enabled)  require_once(DOL_DOCUMENT_ROOT."/projet/class/project.class.php");
-    if ($conf->propal->enabled)  require_once(DOL_DOCUMENT_ROOT."/comm/propal/class/propal.class.php");
-    if ($conf->contrat->enabled) require_once(DOL_DOCUMENT_ROOT."/contrat/class/contrat.class.php");
-    if ($conf->projet->enabled)  require_once(DOL_DOCUMENT_ROOT."/lib/project.lib.php");
-
-    $langs->load("contracts");
-    $langs->load("orders");
-    $langs->load("companies");
-    $langs->load("bills");
-    $langs->load("products");
 
     $usehm = $conf->global->MAIN_USE_HOURMIN_IN_DATE_RANGE;
 
@@ -112,7 +104,7 @@ class DolWsContrat {
       if ($ret < 0) {
         dol_print_error($db, $commande->error);
         $this->success = FALSE;
-        $this->message .= 'error'. $commande->error;
+        $this->message .= 'addLigne : '. 'error'. $commande->error;
         return;
       }
       $ret = $contrat->fetch_client();
@@ -210,16 +202,17 @@ class DolWsContrat {
                   );
 
       if ($result > 0) {
-        $this->success = TRUE;
-        $this->message .= 'Line added. ID = '.$result->id.'<br/>\n';
+        $this->success  = TRUE;
+        $this->message .= 'addLigne : '. 'Line added.<br/>\n';
+        $this->data     = print_r($result,true);
       }
       else {
         $this->success = FALSE;
-        $this->message .= 'Error : '.$contrat->error.'<br/>\n';
+        $this->message .= 'addLigne : '. 'Error : '.$contrat->error.'<br/>\n';
       }
     }
     else {
-      $this->message .= "Prix et quantité requis.".'<br/>\n';
+      $this->message .= 'addLigne : '. "Prix et quantité requis.".'<br/>\n';
     }
   }
 }

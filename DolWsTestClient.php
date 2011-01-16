@@ -57,11 +57,11 @@ function createAdherent() {
   $values["nom"]            = $random;
   $values["prenom"]         = $random;
   $values["societe"]        = $random;
-  $values["adresse"]        = null;//$content_profile->field_profile_adresse[0]['street'];
-  $values["cp"]             = null;//$content_profile->field_profile_adresse[0]['postal_code'];
-  $values["ville"]          = null;//$content_profile->field_profile_adresse[0]['city'];
-  $values["departement_id"] = null;
-  $values["pays_id"]        = null;
+  $values["adresse"]        = $random;//$content_profile->field_profile_adresse[0]['street'];
+  $values["cp"]             = $random;//$content_profile->field_profile_adresse[0]['postal_code'];
+  $values["ville"]          = $random;//$content_profile->field_profile_adresse[0]['city'];
+  $values["departement_id"] = 30;
+  $values["pays_id"]        = 1;
   $values["phone"]          = null;
   $values["phone_perso"]    = null;
   $values["phone_mobile"]   = null;
@@ -70,11 +70,13 @@ function createAdherent() {
   $values["password"]       = $random;
   $values["photo"]          = null;
   $values["comment"]        = null;
-  $values["morphy"]         = 1;
+  $values["morphy"]         = 'phy'; // phy ou mor
   $values["cotisation"]     = 10;
   $values["public"]         = null;
   $values["userid"]         = null;
   $values["socid"]          = null;
+  // options
+  $values['options_dddd']  = $random;
   // payment
   $values['accountid']      = 1;
   $values['operation']      = 'PP';
@@ -143,15 +145,17 @@ function getAdherentId() {
 
   $field = 'login';
   $value = "'aaa'";
+  $options = FALSE;
+  $field = 'uuid';$value = "'wxcv'";$options = TRUE;
   $where = '';
-  
-  $return = $client->getAdherentId($field, $value, $where);
+
+  $return = $client->getAdherentId($field, $value, $where, $options);
   print "<pre>";
   print_r($return);
   print "</pre>";
 }
 
-function addSociete() {
+function createSociete() {
   $random = generatePassword();
 
   try {
@@ -165,14 +169,14 @@ function addSociete() {
 
   $values["private"]                = 1; // particulier
   $values["nom"]                    = $random; // nom_particulier * obligatoire
-  $values["prenom"]                 = '';
-  $values["civilite_id"]            = '';
+  $values["prenom"]                 = $random;
+  $values["civilite_id"]            = 'MR'; // MME MR MLE MTRE
 
-  $values["adresse"]                = '';
-  $values["cp"]                     = '';
-  $values["ville"]                  = '';
-  $values["pays_id"]                = '';
-  $values["departement_id"]         = '';
+  $values["adresse"]                = $random;
+  $values["cp"]                     = $random;
+  $values["ville"]                  = $random;
+  $values["pays_id"]                = 1;
+  $values["departement_id"]         = 30;
   $values["tel"]                    = '';
   $values["fax"]                    = '';
   $values["email"]                  = $random. '@'. $random. '.com'; // * obligatoire
@@ -205,7 +209,7 @@ function addSociete() {
   $values["commercial_id"]          = '';
   $values["default_lang"]           = '';
 
-  $return = $client->addSociete(serialize($values));
+  $return = $client->createSociete(serialize($values));
   print "<pre>";
   print_r($return);
   print "</pre>";
@@ -223,13 +227,14 @@ function createContrat() {
   // fill values
   $values = array();
 
-  $values["socid"]                    = 2;
+  $values["socid"]                    = 32;
   $values["commercial_suivi_id"]      = 1;
   $values["commercial_signature_id"]  = 1;
   $values["note"]                     = '';
   $values["projectid"]                = 0; // fk_project
   $values["remise_percent"]           = 0;
   $values["ref"]                      = null;
+  $values['mode']                     = 'libre'; // predefined / libre
 
   $return = $client->createContrat(serialize($values));
   print "<pre>";

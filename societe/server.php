@@ -25,20 +25,37 @@ $server->configureWSDL('WebServicesDolibarr',$ns);
 $server->wsdl->schemaTargetNamespace=$ns;
 
 // register methods
-$server->register('addSociete',
+$server->register('createSociete',
   array('data'=>'xsd:string'),
-  array('success'=>'xsd:int', 'message'=>'xsd:string', 'data'=>'xsd:string'),
+  array('success'=>'xsd:boolean', 'message'=>'xsd:string', 'data'=>'xsd:string'),
+  $ns
+);
+
+$server->register('getSocieteId',
+  array('field'=>'xsd:string', 'value'=>'xsd:string', 'where'=>'xsd:string', 'options'=>'xsd:boolean'),
+  array('success'=>'xsd:boolean', 'message'=>'xsd:string', 'data'=>'xsd:string'),
   $ns
 );
 
 // Return the results.
 $server->service($HTTP_RAW_POST_DATA);
 
-function addSociete($data='') {
+function createSociete($data) {
   require_once("DolWsSociete.php");
   $values = unserialize($data);
   $societe = new DolWsSociete();
-  $societe->addSociete($values);
+  $societe->createSociete($values);
+  return array(
+    'success' => $societe->success,
+    'message' => $societe->message,
+    'data'    => $societe->data,
+  );
+}
+
+function getSocieteId($field, $value, $where, $options) {
+  require_once("DolWsSociete.php");
+  $societe = new DolWsAdherents();
+  $societe->getSocieteId($field, $value, $where, $options);
   return array(
     'success' => $societe->success,
     'message' => $societe->message,
