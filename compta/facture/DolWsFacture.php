@@ -105,19 +105,7 @@ class DolWsFacture {
         // Proprietes particulieres a facture avoir
         $facture->fk_facture_source = $values['fac_avoir'];
         $facture->type              = 2;
-
         $facid = $facture->create($user);
-
-        // Add predefined lines
-        for ($i = 1; $i <= $NBLINES; $i++) {
-          if ($values['idprod'.$i]) {
-            $product  = new Product($db);
-            $product->fetch($values['idprod'.$i]);
-            $startday = dol_mktime(12, 0 , 0, $values['date_start'.$i.'month'], $values['date_start'.$i.'day'], $values['date_start'.$i.'year']);
-            $endday   = dol_mktime(12, 0 , 0, $values['date_end'.$i.'month'], $values['date_end'.$i.'day'], $values['date_end'.$i.'year']);
-            $result   = $facture->addline($facid,$product->description,$product->price, $values['qty'.$i], $product->tva_tx, $product->localtax1_tx, $product->localtax2_tx, $values['idprod'.$i], $values['remise_percent'.$i], $startday, $endday, 0, 0, '', $product->price_base_type, $product->price_ttc, $product->type);
-          }
-        }
       }
     }
 
@@ -173,35 +161,114 @@ class DolWsFacture {
         $facture->remise_absolue    = $values['remise_absolue'];
         $facture->remise_percent    = $values['remise_percent'];
 
+        // If creation from other modules
+        if ($values['origin'] && $values['originid']) {
+          // Parse element/subelement (ex: project_task)
+          $element = $subelement = $values['origin'];
+          if (preg_match('/^([^_]+)_([^_]+)/i',$values['origin'],$regs)) {
+            $element = $regs[1];
+            $subelement = $regs[2];
+          }
 
-        $facid = $facture->create($user);
+          // For compatibility
+          if ($element == 'order')    { $element = $subelement = 'commande'; }
+          if ($element == 'propal')   { $element = 'comm/propal'; $subelement = 'propal'; }
+          if ($element == 'contract') { $element = $subelement = 'contrat'; }
 
-        if (count($values['produits'])) {
-          foreach($values['produits'] as $produit) {
-            $product  = new Product($db);
-            $product->fetch($produit['id']);
-            $startday = dol_mktime(12, 0 , 0, $produit['date']['start']['month'], $produit['date']['start']['day'], $produit['date']['start']['year']);
-            $endday   = dol_mktime(12, 0 , 0, $produit['date']['end']['month'], $produit['date']['end']['day'], $produit['date']['end']['year']);
-            $result   = $facture->addline(
-                          $facid,
-                          $product->description,
-                          $product->price,
-                          $produit['qty'],
-                          $product->tva_tx,
-                          $product->localtax1_tx,
-                          $product->localtax2_tx,
-                          $produit['idprod'],
-                          $produit['remise_percent'],
-                          $startday, $endday,
-                          0,
-                          0,
-                          '',
-                          $product->price_base_type,
-                          $product->price_ttc,
-                          $product->type
-                        );
+          $facture->origin  = $values['origin'];
+          $facture->origin_id = $values['originid'];
+
+          $facid = $facture->create($user);
+
+          if ($facid > 0) {
+            require_once(DOL_DOCUMENT_ROOT.'/'.$element.'/class/'.$subelement.'.class.php');
+            $classname = ucfirst($subelement);
+            $object = new $classname($db);
+
+            if ($object->fetch($values['originid'])) {
+              // TODO mutualiser
+              $lines = $object->lignes;
+              if (empty($lines) && method_exists($object,'fetch_lignes')) $lines = $object->fetch_lignes();
+              if (empty($lines) && method_exists($object,'fetch_lines'))  $lines = $object->fetch_lines();
+
+              for ($i = 0 ; $i < sizeof($lines) ; $i++) {
+                $desc=($lines[$i]->desc?$lines[$i]->desc:$lines[$i]->libelle);
+                $product_type=($lines[$i]->product_type?$lines[$i]->product_type:0);
+
+                // Dates
+                // TODO mutualiser
+                $date_start=$lines[$i]->date_debut_prevue;
+                if ($lines[$i]->date_debut_reel) $date_start=$lines[$i]->date_debut_reel;
+                if ($lines[$i]->date_start) $date_start=$lines[$i]->date_start;
+                $date_end=$lines[$i]->date_fin_prevue;
+                if ($lines[$i]->date_fin_reel) $date_end=$lines[$i]->date_fin_reel;
+                if ($lines[$i]->date_end) $date_end=$lines[$i]->date_end;
+
+                $result = $facture->addline(
+                  $facid,
+                  $desc,
+                  $lines[$i]->subprice,
+                  $lines[$i]->qty,
+                  $lines[$i]->tva_tx,
+                  $lines[$i]->localtax1_tx,
+                  $lines[$i]->localtax2_tx,
+                  $lines[$i]->fk_product,
+                  $lines[$i]->remise_percent,
+                  $date_start,
+                  $date_end,
+                  0,
+                  $lines[$i]->info_bits,
+                  $lines[$i]->fk_remise_except,
+                  'HT',
+                  0,
+                  $product_type
+                );
+
+                if ($result < 0) {
+                  $error++;
+                  break;
+                }
+              }
+            }
+            else {
+              $error++;
+            }
+          }
+          else {
+            $error++;
           }
         }
+        else {
+          $facid = $facture->create($user);
+          // Add predefined lines
+          if (count($values['produits'])) {
+            foreach($values['produits'] as $produit) {
+              $product  = new Product($db);
+              $product->fetch($produit['id']);
+              $startday = dol_mktime(12, 0 , 0, $produit['date']['start']['month'], $produit['date']['start']['day'], $produit['date']['start']['year']);
+              $endday   = dol_mktime(12, 0 , 0, $produit['date']['end']['month'], $produit['date']['end']['day'], $produit['date']['end']['year']);
+              $result   = $facture->addline(
+                            $facid,
+                            $product->description,
+                            $product->price,
+                            $produit['qty'],
+                            $product->tva_tx,
+                            $product->localtax1_tx,
+                            $product->localtax2_tx,
+                            $produit['idprod'],
+                            $produit['remise_percent'],
+                            $startday, $endday,
+                            0,
+                            0,
+                            '',
+                            $product->price_base_type,
+                            $product->price_ttc,
+                            $product->type
+                          );
+            }
+          }
+        }
+
         if ($values['valide']) {
           $facture->fetch_client();
           $facture->validate($user);

@@ -87,7 +87,7 @@ class DolWsContrat {
         $contrat->validate($user, $langs, $conf);
       }
       $this->success = TRUE;
-      $this->message .= 'createContrat : '. 'Le contrat a été créé.<br/>\n';
+      $this->message .= 'createContrat : '. 'Le contrat a été créé : '. $contrat->id. '<br/>\n';
       $this->data = $contrat->id;
     }
     else {
@@ -202,11 +202,16 @@ class DolWsContrat {
                   $price_base_type,
                   $pu_ttc,
                   $info_bits
-                  );
+                );
 
       if ($result > 0) {
+        $contrat->fetch_lignes();
+        $last = end($contrat->lignes);
+        if ($values['active']) {
+          $alors = $contrat->active_line($user, $last->id, $values['date'], $values['dateend'], $values['comment']);
+        }
         $this->success  = TRUE;
-        $this->message .= 'DolWsContrat : addLigne : '. 'Line added.<br/>\n';
+        $this->message .= 'DolWsContrat : addLigne : '. 'Line added : '. $last->id. '<br/>\n';
         $this->data     = $result;
       }
       else {

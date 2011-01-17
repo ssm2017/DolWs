@@ -60,7 +60,6 @@ class DolWsPaiement {
           // Mise a jour liens (pour chaque facture concernees par le paiement)
           foreach ($paiement->amounts as $key => $value) {
             $facid = $key;
-            $this->message .= '------------'. $facid;
             $fac = new Facture($db);
             $fac->fetch($facid);
             $fac->fetch_client();
