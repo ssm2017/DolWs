@@ -70,7 +70,7 @@ class DolWsContrat {
 
     $contrat = new Contrat($db);
 
-    $contrat->socid         = $values["socid"];
+    $contrat->socid          = $values["socid"];
     $contrat->date_contrat   = $datecontrat;
 
     $contrat->commercial_suivi_id      = $values["commercial_suivi_id"];
@@ -83,6 +83,9 @@ class DolWsContrat {
 
     $result = $contrat->create($user,$langs,$conf);
     if ($result > 0) {
+      if ($values['valide']) {
+        $contrat->validate($user, $langs, $conf);
+      }
       $this->success = TRUE;
       $this->message .= 'createContrat : '. 'Le contrat a été créé.<br/>\n';
       $this->data = $contrat->id;
@@ -203,8 +206,8 @@ class DolWsContrat {
 
       if ($result > 0) {
         $this->success  = TRUE;
-        $this->message .= 'addLigne : '. 'Line added.<br/>\n';
-        $this->data     = print_r($result,true);
+        $this->message .= 'DolWsContrat : addLigne : '. 'Line added.<br/>\n';
+        $this->data     = $result;
       }
       else {
         $this->success = FALSE;

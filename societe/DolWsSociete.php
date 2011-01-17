@@ -114,6 +114,7 @@ class DolWsSociete {
         $contact->status      = 1;
         $contact->email       = $soc->email;
         $contact->priv        = 0;
+        $contact->note        = $soc->note;
 
         $result = $contact->create($user);
       }

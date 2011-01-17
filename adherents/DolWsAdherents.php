@@ -44,8 +44,11 @@ class DolWsAdherents {
     }
 
     $datecotisation=time();
-    if (isset($values["reday"]) && isset($values["remonth"]) && isset($values["reyear"])) {
-      $datecotisation = dol_mktime(12, 0 , 0, $values["remonth"], $values["reday"], $values["reyear"]);
+    if (isset($values["reyear"]) && isset($values["remonth"]) && isset($values["reday"])) {
+      $datecotisation = dol_mktime(0, 0, 0, $values["remonth"], $values["reday"], $values["reyear"]);
+    }
+    if (isset($values["endyear"]) && isset($values["endmonth"]) && isset($values["endday"])) {
+      $datesubend = dol_mktime(0, 0, 0, $values["endmonth"], $values["endday"], $values["endyear"]);
     }
 
     $adh->cotisation  = $values["cotisation"];
@@ -151,37 +154,8 @@ class DolWsAdherents {
     if ($result > 0) {
 
       if ($adh->cotisation > 0) {
-
-        $crowid = $adh->cotisation($datecotisation, $adh->cotisation);
-
-        // insertion dans la gestion banquaire si configure pour
-        if ($conf->global->ADHERENT_BANK_USE) {
-
-          $dateop = time();
-          $amount = $adh->cotisation;
-          $acct   = new Account($db,$values["accountid"]);
-          $insertid = $acct->addline($dateop, $values["operation"], $values["label"], $amount, $values["num_chq"], '', $user);
-          if ($insertid == '') {
-            $this->message .= "Erreur ajout d'entrée banquaire."."<br>\n";
-            dol_print_error($db);
-          }
-          else {
-            // met a jour la table cotisation
-            $sql ="UPDATE ".MAIN_DB_PREFIX."cotisation";
-            $sql.=" SET fk_bank=$insertid WHERE rowid=$crowid ";
-            $result = $db->query($sql);
-            if ($result) {
-              $this->message .= 'createAdherent : '. 'Cotisation ajoutée.'."<br>\n";
-            }
-            else {
-              $this->message .= 'createAdherent : '. 'Erreur ajout de cotisation.'."<br>\n";
-              dol_print_error($db);
-            }
-          }
-        }
-        else {
-          $this->message .= 'createAdherent : '. 'Cotisation inactive.'."<br>\n";
-        }
+        $values['adhid'] = $adh->id;
+        $this->createCardSubscription($values);
       }
       else {
         $this->message .= 'createAdherent : '. 'Cotisation inferieure a 1.'. "<br>\n";
@@ -223,9 +197,13 @@ class DolWsAdherents {
     }
 
     $datecotisation=time();
-    if (isset($values["reday"]) && isset($values["remonth"]) && isset($values["reyear"])) {
-      $datecotisation=dol_mktime(12, 0 , 0, $values["remonth"], $values["reday"], $values["reyear"]);
+    if (isset($values["reyear"]) && isset($values["remonth"]) && isset($values["reday"])) {
+      $datecotisation = dol_mktime(0, 0, 0, $values["remonth"], $values["reday"], $values["reyear"]);
     }
+    if (isset($values["endyear"]) && isset($values["endmonth"]) && isset($values["endday"])) {
+      $datesubend = dol_mktime(0, 0, 0, $values["endmonth"], $values["endday"], $values["endyear"]);
+    }
+    
 
     // Create new object
     if ($adh->id > 0) {
@@ -288,37 +266,11 @@ class DolWsAdherents {
       if ($result >= 0 && ! sizeof($adh->errors)) {
         $this->message .= 'updateAdherent : '. "L'adhérent a été mis à jour.<br/>\n";
         if ($adh->cotisation > 0) {
-
-          $crowid = $adh->cotisation($datecotisation, $adh->cotisation);
-
-          // insertion dans la gestion banquaire si configure pour
-          if ($conf->global->ADHERENT_BANK_USE) {
-
-            $dateop = time();
-            $amount = $adh->cotisation;
-            $acct   = new Account($db,$values["accountid"]);
-            $insertid = $acct->addline($dateop, $values["operation"], $values["label"], $amount, $values["num_chq"], '', $user);
-            if ($insertid == '') {
-              $this->message .= 'updateAdherent : '. "Erreur ajout d'entrée banquaire."."<br>\n";
-              dol_print_error($db);
-            }
-            else {
-              // met a jour la table cotisation
-              $sql ="UPDATE ".MAIN_DB_PREFIX."cotisation";
-              $sql.=" SET fk_bank=$insertid WHERE rowid=$crowid ";
-              $result = $db->query($sql);
-              if ($result) {
-                $this->message .= 'updateAdherent : '. 'Cotisation ajoutée.'."<br>\n";
-              }
-              else {
-                $this->message .= 'updateAdherent : '. 'Erreur ajout de cotisation.'."<br>\n";
-                dol_print_error($db);
-              }
-            }
-          }
-          else {
-            $this->message .= 'updateAdherent : '. 'Cotisation inactive.'."<br>\n";
-          }
+          $values['adhid'] = $adh->id;
+          $this->createCardSubscription($values);
+        }
+        else {
+          $this->message .= 'createAdherent : '. 'Cotisation inferieure a 1.'. "<br>\n";
         }
       }
       else {
