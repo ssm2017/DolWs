@@ -68,8 +68,8 @@ class DolWsSociete {
     $soc->tva_assuj             = $values["assujtva_value"];
 
     // Local Taxes
-    $soc->localtax1_assuj   = $values["localtax1assuj_value"];
-    $soc->localtax2_assuj   = $values["localtax2assuj_value"];
+    $soc->localtax1_assuj       = $values["localtax1assuj_value"];
+    $soc->localtax2_assuj       = $values["localtax2assuj_value"];
 
     $soc->tva_intra             = $values["tva_intra"];
 
@@ -121,14 +121,14 @@ class DolWsSociete {
     }
     else {
       $this->success  = FALSE;
-      $this->message .= print_r($result, true). 'createSociete : '. "La société n'a pas été crée car : ". join(',', $soc->errors). ' nom = '. $soc->nom. ' / '. $values['nom']. "<br>\n";
+      $this->message .= print_r($result, true). 'DolWsSociete::createSociete : '. "La société n'a pas été crée car : ". join(',', $soc->errors). ' nom = '. $soc->nom. ' / '. $values['nom']. "<br>\n";
       return;
     }
 
     if ($result >= 0) {
       $db->commit();
       $this->success  = TRUE;
-      $this->message .= 'createSociete : '. 'La société a été créée.<br>\n';
+      $this->message .= 'DolWsSociete::createSociete : '. 'La société a été créée : '. $soc->id. '<br>\n';
       $this->data     = $soc->id;
       return;
     }
@@ -136,9 +136,121 @@ class DolWsSociete {
       $db->rollback();
       $langs->load("errors");
       $this->succes   = FALSE;
-      $this->message .= 'createSociete : '. 'Erreur : '. $langs->trans($soc->error). "<br>\n";
+      $this->message .= 'DolWsSociete::createSociete : '. 'Erreur : '. $langs->trans($soc->error). "<br>\n";
     }
   }
+  function updateSociete($values) {
+    global $conf, $langs, $db, $user;
+
+    // Initialization Company Object
+    $soc = new Societe($db);
+    $soc->fetch($values['socid']);
+
+    if ($values["getcustomercode"]) {
+      // We defined value code_client
+      $values["code_client"]="Acompleter";
+    }
+
+    if ($values["getsuppliercode"]) {
+      // We defined value code_fournisseur
+      $values["code_fournisseur"]="Acompleter";
+    }
+
+    require_once(DOL_DOCUMENT_ROOT."/lib/functions2.lib.php");
+    $error = 0;
+
+    $soc->nom     = isset($values['nom']) ? trim($values['nom']) : $soc->nom;
+    $soc->prenom  = isset($values['prenom']) ? trim($values['prenom']) : $soc->prenom;
+    if ($values["private"] == 1) {
+      $soc->particulier         = $values["private"];
+      $soc->nom                 = empty($conf->global->MAIN_FIRSTNAME_NAME_POSITION) ? $soc->prenom.' '. $soc->nom : $soc->nom.' '. $soc->prenom;
+      $soc->nom_particulier     = $soc->nom;
+      $soc->prenom              = $soc->prenom;
+      $soc->civilite_id         = isset($values['civilite_id']) ? $values['civilite_id'] : $soc->civilite_id;
+    }
+    $soc->address               = isset($values['adresse']) ? $values['adresse'] : $soc->adresse;
+    $soc->adresse               = isset($values['adresse']) ? $values['adresse'] : $soc->adresse; // TODO obsolete
+    $soc->cp                    = isset($values['cp']) ? $values['cp'] : $soc->cp;
+    $soc->ville                 = isset($values['ville']) ? $values['ville'] : $soc->ville;
+    $soc->pays_id               = isset($values['pays_id']) ? $values['pays_id'] : $soc->pays_id;
+    $soc->departement_id        = isset($values['departement_id']) ? $values['departement_id'] : $soc->departement_id;
+    $soc->tel                   = isset($values['tel']) ? $values['tel'] : $soc->tel;
+    $soc->fax                   = isset($values['fax']) ? $values['fax'] : $soc->fax;
+    $soc->email                 = isset($values['email']) ? trim($values['email']) : $soc->email;
+    $soc->url                   = isset($values['url']) ? $values['url'] : $soc->url;
+    $soc->siren                 = isset($values['idprof1']) ? $values['idprof1'] : $soc->idprof1;
+    $soc->siret                 = isset($values['idprof2']) ? $values['idprof2'] : $soc->idprof2;
+    $soc->ape                   = isset($values['idprof3']) ? $values['idprof3'] : $soc->idprof3;
+    $soc->idprof4               = isset($values['idprof4']) ? $values['idprof4'] : $soc->idprof4;
+    $soc->prefix_comm           = isset($values['prefix_comm']) ? $values['prefix_comm'] : $soc->prefix_comm;
+    $soc->code_client           = isset($values['code_client']) ? $values['code_client'] : $soc->code_client;
+    $soc->code_fournisseur      = isset($values['code_fournisseur']) ? $values['code_fournisseur'] : $soc->code_fournisseur;
+    $soc->capital               = isset($values['capital']) ? $values['capital'] : $soc->capital;
+    $soc->gencod                = isset($values['gencod']) ? $values['gencod'] : $soc->gencod;
+    $soc->note                  = isset($values['note']) ? $values['note'] : $soc->note;
+
+    $soc->tva_assuj             = isset($values['assujtva_value']) ? $values['assujtva_value'] : $soc->assujtva_value;
+
+    // Local Taxes
+    $soc->localtax1_assuj       = isset($values['localtax1assuj_value']) ? $values['localtax1assuj_value'] : $soc->localtax1assuj_value;
+    $soc->localtax2_assuj       = isset($values['localtax2assuj_value']) ? $values['localtax2assuj_value'] : $soc->localtax2assuj_value;
+
+    $soc->tva_intra             = isset($values['tva_intra']) ? $values['tva_intra'] : $soc->tva_intra;
+
+    $soc->forme_juridique_code  = isset($values['forme_juridique_code']) ? $values['forme_juridique_code'] : $soc->forme_juridique_code;
+    $soc->effectif_id           = isset($values['effectif_id']) ? $values['effectif_id'] : $soc->effectif_id;
+    if ($values["private"] == 1) {
+      $soc->typent_id           = 8; // TODO predict another method if the field "special" change of rowid
+    }
+    else {
+      $soc->typent_id           = isset($values['typent_id']) ? $values['typent_id'] : $soc->typent_id;
+    }
+    $soc->client                = isset($values['client']) ? $values['client'] : $soc->client;
+    $soc->fournisseur           = isset($values['fournisseur']) ? $values['fournisseur'] : $soc->fournisseur;
+    $soc->fournisseur_categorie = isset($values['fournisseur_categorie']) ? $values['fournisseur_categorie'] : $soc->fournisseur_categorie;
+
+    $soc->commercial_id         = isset($values['commercial_id']) ? $values['commercial_id'] : $soc->commercial_id;
+    $soc->default_lang          = isset($values['default_lang']) ? $values['default_lang'] : $soc->default_lang;
+
+    $db->begin();
+
+    $oldsoc = new Societe($db);
+    $result = $oldsoc->fetch($values['socid']);
+
+    // To not set code if third party is not concerned. But if it had values, we keep them.
+    if (empty($soc->client) && empty($oldsoc->code_client))          $soc->code_client = '';
+    if (empty($soc->fournisseur)&& empty($oldsoc->code_fournisseur)) $soc->code_fournisseur = '';
+    //var_dump($soc);exit;
+
+    $result = $soc->update($values['socid'], $user, 1, $oldsoc->codeclient_modifiable(), $oldsoc->codefournisseur_modifiable());
+
+    if ($result >= 0) {
+      if (!empty($soc->note)) {
+        $sql = "UPDATE ".MAIN_DB_PREFIX."societe SET note='".addslashes($soc->note)."' WHERE rowid=".$soc->id;
+        $db->query($sql);
+      }
+    }
+    else {
+      $this->success  = FALSE;
+      $this->message .= print_r($result, true). 'DolWsSociete::updateSociete : '. "La société n'a pas été mise à jour car : ". join(',', $soc->errors). ' nom = '. $soc->nom. ' / '. $values['nom']. "<br>\n";
+      return;
+    }
+
+    if ($result >= 0) {
+      $db->commit();
+      $this->success  = TRUE;
+      $this->message .= 'DolWsSociete::updateSociete : '. 'La société a été mise à jour : '. $values['socid']. '<br>\n';
+      $this->data     = $soc->id;
+      return;
+    }
+    else {
+      $db->rollback();
+      $langs->load("errors");
+      $this->succes   = FALSE;
+      $this->message .= 'DolWsSociete::updateSociete : '. 'Erreur : '. $langs->trans($soc->error). "<br>\n";
+    }
+  }
+
   function getSocieteId($field, $value, $where = '') {
     global $conf, $langs, $db, $user;
 
@@ -153,13 +265,13 @@ class DolWsSociete {
       $rowid  = $db->fetch_object($result)->rowid;
       if ($rowid) {
         $this->success  = TRUE;
-        $this->message .= 'getSocieteId : '. 'Success'. "<br>\n";
+        $this->message .= 'DolWsSociete::getSocieteId : '. 'Success : '. $rowid. "<br>\n";
         $this->data     = $rowid;
       }
     }
     else {
       $this->success = FALSE;
-      $this->message .= 'getSocieteId : '. 'Erreur : '. $db->error(). "<br>\n";
+      $this->message .= 'DolWsSociete::getSocieteId : '. 'Erreur : '. $db->error(). "<br>\n";
     }
   }
 }

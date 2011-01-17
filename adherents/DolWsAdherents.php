@@ -176,14 +176,16 @@ class DolWsAdherents {
     global $conf, $langs, $db, $user;
 
     $adh = new Adherent($db);
-    if (isset($values['rowid']) && $values['rowid'] > 0) {
-      $adh->fetch($values['rowid']);
+    if (isset($values['adhid']) && $values['adhid'] > 0) {
+      $adh->fetch($values['adhid']);
     }
 
     //$adh->fetch_login($values["member_login"]);
     if (!$adh->id) {
-      $this->message .= 'updateAdherent : '. "L'utilisateur n'existe pas.<br/>\n";
-      $this->createAdherent($values);
+      $this->message .= 'DolWsAdherents:updateAdherent : '. "L'adherent n'existe pas.<br/>\n";
+      if ($values['create']) {
+        $this->createAdherent($values);
+      }
       return;
     }
 
@@ -264,13 +266,13 @@ class DolWsAdherents {
 
       $result = $adh->update($user, 0, $nosyncuser, $nosyncuserpass);
       if ($result >= 0 && ! sizeof($adh->errors)) {
-        $this->message .= 'updateAdherent : '. "L'adhérent a été mis à jour.<br/>\n";
+        $this->message .= 'DolWsAdherents::updateAdherent : '. "L'adhérent a été mis à jour : ". $adh->id. '<br/>\n';
         if ($adh->cotisation > 0) {
           $values['adhid'] = $adh->id;
           $this->createCardSubscription($values);
         }
         else {
-          $this->message .= 'createAdherent : '. 'Cotisation inferieure a 1.'. "<br>\n";
+          $this->message .= 'DolWsAdherents::createAdherent : '. 'Cotisation inferieure a 1.'. "<br>\n";
         }
       }
       else {
@@ -293,12 +295,12 @@ class DolWsAdherents {
 
     $res = $adh->update_note($note, $user);
     if ($res < 0) {
-      $this->message .= 'updateAdherent : '. 'Erreur en mettant à jour une note. : '. $adh->error.'<br/>\n';
+      $this->message .= 'DolWsAdherents::updateAdherent : '. 'Erreur en mettant à jour une note. : '. $adh->error.'<br/>\n';
       $db->rollback();
     }
     else {
       $db->commit();
-      $this->message .= 'updateAdherent : '. 'Note mise à jour.<br/>\n';
+      $this->message .= 'DolWsAdherents::updateAdherent : '. 'Note mise à jour.<br/>\n';
     }
   }
   function createCardSubscription($values) {
@@ -313,7 +315,7 @@ class DolWsAdherents {
     $result   = $adh->fetch($values['adhid']);
     if ($result < 1) {
       $this->success = FALSE;
-      $this->message .= 'createCardSubscription : '. 'Erreur : '. $adh->error. '<br/>\n';
+      $this->message .= 'DolWsAdherents::createCardSubscription : '. 'Erreur : '. $adh->error. '<br/>\n';
       $this->data = $values['adhid'];
       return;
     }
@@ -332,7 +334,7 @@ class DolWsAdherents {
 
     if (!$datecotisation) {
       $this->success = FALSE;
-      $this->message .= 'createCardSubscription : '. $langs->trans("BadDateFormat"). '<br/>\n';
+      $this->message .= 'DolWsAdherents::createCardSubscription : '. $langs->trans("BadDateFormat"). '<br/>\n';
       $this->data = $datecotisation;
       return;
     }
@@ -353,7 +355,7 @@ class DolWsAdherents {
       if (!($values["cotisation"] > 0)) {
         // If field is '' or not a numeric value
         $this->success = FALSE;
-        $this->message .= 'createCardSubscription : '. $langs->trans("ErrorFieldRequired",$langs->transnoentities("Amount")). '<br/>\n';
+        $this->message .= 'DolWsAdherents::createCardSubscription : '. $langs->trans("ErrorFieldRequired",$langs->transnoentities("Amount")). '<br/>\n';
         return;
       }
       else {
@@ -361,15 +363,15 @@ class DolWsAdherents {
           if ($values["cotisation"]) {
             if (!$values["label"] || !$values["operation"] || !$values["accountid"]) {
               $this->success = FALSE;
-              if (!$values["label"])     $this->message .= 'createCardSubscription : '. $langs->trans("ErrorFieldRequired",$langs->transnoentities("Label")). '<br/>\n';
-              if (!$values["operation"]) $this->message .= 'createCardSubscription : '. $langs->trans("ErrorFieldRequired",$langs->transnoentities("PaymentMode")). '<br/>\n';
-              if (!$values["accountid"]) $this->message .= 'createCardSubscription : '. $langs->trans("ErrorFieldRequired",$langs->transnoentities("FinancialAccount")). '<br/>\n';
+              if (!$values["label"])     $this->message .= 'DolWsAdherents::createCardSubscription : '. $langs->trans("ErrorFieldRequired",$langs->transnoentities("Label")). '<br/>\n';
+              if (!$values["operation"]) $this->message .= 'DolWsAdherents::createCardSubscription : '. $langs->trans("ErrorFieldRequired",$langs->transnoentities("PaymentMode")). '<br/>\n';
+              if (!$values["accountid"]) $this->message .= 'DolWsAdherents::createCardSubscription : '. $langs->trans("ErrorFieldRequired",$langs->transnoentities("FinancialAccount")). '<br/>\n';
               return;
             }
           }
           else {
             $this->success = FALSE;
-            if ($values["accountid"])   $this->message .= 'createCardSubscription : '. $langs->trans("ErrorDoNotProvideAccountsIfNullAmount"). '<br/>\n';
+            if ($values["accountid"])   $this->message .= 'DolWsAdherents::createCardSubscription : '. $langs->trans("ErrorDoNotProvideAccountsIfNullAmount"). '<br/>\n';
           }
         }
       }
@@ -382,7 +384,7 @@ class DolWsAdherents {
     if ($crowid > 0) {
       $db->commit();
       $this->success = TRUE;
-      $this->message .= 'createCardSubscription : '. 'Cotisation ajoutée avec succes.'. '<br/>\n';
+      $this->message .= 'DolWsAdherents::createCardSubscription : '. 'Cotisation ajoutée avec succes : '. $crowid. '<br/>\n';
       $this->data = $crowid;
       // Envoi mail
       if ($values["sendmail"]) {
@@ -393,7 +395,7 @@ class DolWsAdherents {
     else {
       $db->rollback();
       $this->success = FALSE;
-      $this->message .= 'createCardSubscription : '. 'Erreur : '. $adh->error. '<br/>\n';
+      $this->message .= 'DolWsAdherents::createCardSubscription : '. 'Erreur : '. $adh->error. '<br/>\n';
     }
   }
   function getAdherentId($field, $value, $where = '', $options = FALSE) {
@@ -412,21 +414,26 @@ class DolWsAdherents {
 
     $result = $db->query($sql);
     if ($result) {
-      if ($options) {
-        $rowid  = $db->fetch_object($result)->fk_member;
+      $row = $db->fetch_object($result);
+      if ($row) {
+        if ($options) {
+          $rowid = $row->fk_member;
+        }
+        else {
+          $rowid = $row->rowid;
+        }
+        $this->success = TRUE;
+        $this->message .= 'DolWsAdherents::getAdherentId : '. 'Success : '. $rowid. "<br>\n";
+        $this->data = $rowid;
       }
       else {
-        $rowid  = $db->fetch_object($result)->rowid;
-      }
-      if ($rowid) {
-        $this->success = TRUE;
-        $this->message .= 'getAdherentId : '. 'Success'. "<br>\n";
-        $this->data = $rowid;
+        $this->success = FALSE;
+        $this->message .= 'DolWsAdherents::getAdherentId : '. 'error : '. $db->error(). "<br>\n";
       }
     }
     else {
       $this->success = FALSE;
-      $this->message .= 'getAdherentId : '. 'error : '. $db->error(). "<br>\n";
+      $this->message .= 'DolWsAdherents::getAdherentId : '. 'error : '. $db->error(). "<br>\n";
     }
   }
 }
