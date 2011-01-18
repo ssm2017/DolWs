@@ -96,12 +96,12 @@ class DolWsContrat {
         $contrat->validate($user, $langs, $conf);
       }
       $this->success = TRUE;
-      $this->message .= 'createContrat : '. 'Le contrat a été créé : '. $contrat->id. '<br/>\n';
+      $this->message .= 'createContrat : '. 'Le contrat a été créé : '. $contrat->id. '|';
       $this->data = $contrat->id;
     }
     else {
       $this->success = FALSE;
-      $this->message .= 'createContrat : '. 'Erreur : '. $contrat->error. '<br/>\n';
+      $this->message .= 'createContrat : '. 'Erreur : '. $contrat->error. '|';
     }
   }
 
@@ -220,16 +220,16 @@ class DolWsContrat {
           $alors = $contrat->active_line($user, $last->id, $values['date'], $values['dateend'], $values['comment']);
         }
         $this->success  = TRUE;
-        $this->message .= 'DolWsContrat : addLigne : '. 'Line added : '. $last->id. '<br/>\n';
+        $this->message .= 'DolWsContrat : addLigne : '. 'Line added : '. $last->id. '|';
         $this->data     = $result;
       }
       else {
         $this->success = FALSE;
-        $this->message .= 'addLigne : '. 'Error : '.$contrat->error.'<br/>\n';
+        $this->message .= 'addLigne : '. 'Error : '.$contrat->error.'|';
       }
     }
     else {
-      $this->message .= 'addLigne : '. "Prix et quantité requis.".'<br/>\n';
+      $this->message .= 'addLigne : '. "Prix et quantité requis.".'|';
     }
   }
 }

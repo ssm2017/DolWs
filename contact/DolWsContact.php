@@ -55,11 +55,11 @@ class DolWsContact {
       $id =  $contact->create($user);
       if ($id > 0) {
             $this->success = TRUE;
-            $this->message .= 'createContact : '. "Contact ajouté.<br/>\n";
+            $this->message .= 'createContact : '. "Contact ajouté.|";
       }
       else {
         $this->success = FALSE;
-        $this->message .= 'createContact : '. "Erreur : ". $contact->error. ".<br/>\n";
+        $this->message .= 'createContact : '. "Erreur : ". $contact->error. ".|";
       }
     }
   }
@@ -68,7 +68,7 @@ class DolWsContact {
 
     if (empty($values["name"])) {
       $this->succes = FALSE;
-      $this->message .= 'updateContact : '. 'Erreur : '. $langs->trans("ErrorFieldRequired",$langs->transnoentities("Name").' / '.$langs->transnoentities("Label")). '<br/>\n';
+      $this->message .= 'updateContact : '. 'Erreur : '. $langs->trans("ErrorFieldRequired",$langs->transnoentities("Name").' / '.$langs->transnoentities("Label")). '|';
       return;
     }
 
@@ -103,11 +103,11 @@ class DolWsContact {
       $contact->old_name='';
       $contact->old_firstname='';
       $this->succes = TRUE;
-      $this->message .= 'updateContact : '. 'Contact mis à jour.<br/>\n';
+      $this->message .= 'updateContact : '. 'Contact mis à jour.|';
     }
     else {
       $this->succes = FALSE;
-      $this->message .= 'updateContact : '. 'Erreur : '. $contact->error. '<br/>\n';
+      $this->message .= 'updateContact : '. 'Erreur : '. $contact->error. '|';
     }
   }
   function getContactId($field, $value, $where = '') {

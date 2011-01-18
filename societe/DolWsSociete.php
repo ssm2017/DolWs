@@ -130,14 +130,14 @@ class DolWsSociete {
     }
     else {
       $this->success  = FALSE;
-      $this->message .= print_r($result, true). 'DolWsSociete::createSociete : '. "La société n'a pas été crée car : ". join(',', $soc->errors). ' nom = '. $soc->nom. ' / '. $values['nom']. "<br>\n";
+      $this->message .= print_r($result, true). 'DolWsSociete::createSociete : '. "La société n'a pas été crée car : ". join(',', $soc->errors). ' nom = '. $soc->nom. ' / '. $values['nom']. "|";
       return;
     }
 
     if ($result >= 0) {
       $db->commit();
       $this->success  = TRUE;
-      $this->message .= 'DolWsSociete::createSociete : '. 'La société a été créée : '. $soc->id. '<br>\n';
+      $this->message .= 'DolWsSociete::createSociete : '. 'La société a été créée : '. $soc->id. '|';
       $this->data     = $soc->id;
       return;
     }
@@ -145,7 +145,7 @@ class DolWsSociete {
       $db->rollback();
       $langs->load("errors");
       $this->succes   = FALSE;
-      $this->message .= 'DolWsSociete::createSociete : '. 'Erreur : '. $langs->trans($soc->error). "<br>\n";
+      $this->message .= 'DolWsSociete::createSociete : '. 'Erreur : '. $langs->trans($soc->error). "|";
     }
   }
   function updateSociete($values) {
@@ -241,14 +241,14 @@ class DolWsSociete {
     }
     else {
       $this->success  = FALSE;
-      $this->message .= print_r($result, true). 'DolWsSociete::updateSociete : '. "La société n'a pas été mise à jour car : ". join(',', $soc->errors). ' nom = '. $soc->nom. ' / '. $values['nom']. "<br>\n";
+      $this->message .= print_r($result, true). 'DolWsSociete::updateSociete : '. "La société n'a pas été mise à jour car : ". join(',', $soc->errors). ' nom = '. $soc->nom. ' / '. $values['nom']. "|";
       return;
     }
 
     if ($result >= 0) {
       $db->commit();
       $this->success  = TRUE;
-      $this->message .= 'DolWsSociete::updateSociete : '. 'La société a été mise à jour : '. $values['socid']. '<br>\n';
+      $this->message .= 'DolWsSociete::updateSociete : '. 'La société a été mise à jour : '. $values['socid']. '|';
       $this->data     = $soc->id;
       return;
     }
@@ -256,7 +256,7 @@ class DolWsSociete {
       $db->rollback();
       $langs->load("errors");
       $this->succes   = FALSE;
-      $this->message .= 'DolWsSociete::updateSociete : '. 'Erreur : '. $langs->trans($soc->error). "<br>\n";
+      $this->message .= 'DolWsSociete::updateSociete : '. 'Erreur : '. $langs->trans($soc->error). "|";
     }
   }
 
@@ -274,13 +274,17 @@ class DolWsSociete {
       $rowid  = $db->fetch_object($result)->rowid;
       if ($rowid) {
         $this->success  = TRUE;
-        $this->message .= 'DolWsSociete::getSocieteId : '. 'Success : '. $rowid. "<br>\n";
+        $this->message .= 'DolWsSociete::getSocieteId : '. 'Success : '. $rowid. "|";
         $this->data     = $rowid;
+      }
+      else {
+        $this->success = FALSE;
+        $this->message .= 'DolWsSociete::getSocieteId : '. 'Erreur : '. $db->error(). "|";
       }
     }
     else {
       $this->success = FALSE;
-      $this->message .= 'DolWsSociete::getSocieteId : '. 'Erreur : '. $db->error(). "<br>\n";
+      $this->message .= 'DolWsSociete::getSocieteId : '. 'Erreur : '. $db->error(). "|";
     }
   }
 }

@@ -90,14 +90,14 @@ class DolWsPaiement {
         }
         else {
           $this->success = FALSE;
-          $this->message .= 'DolWsPaiement::createPaiement : '. 'Erreur : Entrée sur le compte echec.'. $paiement->error. '<br/>\n';
+          $this->message .= 'DolWsPaiement::createPaiement : '. 'Erreur : Entrée sur le compte echec.'. $paiement->error. '|';
           $error++;
         }
       }
     }
     else {
       $this->success = FALSE;
-      $this->message .= 'DolWsPaiement::createPaiement b: '. 'Erreur : '. $paiement->error. '<br/>\n';
+      $this->message .= 'DolWsPaiement::createPaiement b: '. 'Erreur : '. $paiement->error. '|';
       $error++;
     }
 
@@ -105,13 +105,13 @@ class DolWsPaiement {
       $db->commit();
       $loc = DOL_URL_ROOT.'/compta/paiement/fiche.php?id='.$paiement_id;
       $this->success = TRUE;
-      $this->message .= 'DolWsPaiement::createPaiement : '. 'Paiement effectué : '. $paiement_id. '<br/>\n';
+      $this->message .= 'DolWsPaiement::createPaiement : '. 'Paiement effectué : '. $paiement_id. '|';
       $this->data = $paiement_id;
     }
     else {
       $db->rollback();
       $this->success = FALSE;
-      $this->message .= 'DolWsPaiement::createPaiement c: '. 'Erreur : '. $paiement->error. '<br/>\n';
+      $this->message .= 'DolWsPaiement::createPaiement c: '. 'Erreur : '. $paiement->error. '|';
     }
   }
 }

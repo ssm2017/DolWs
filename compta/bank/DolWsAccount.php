@@ -63,12 +63,12 @@ class DolWsAccount {
       }
       else {
         $this->success  = FALSE;
-        $this->message .= 'DolWsAccount::addLigne : Erreur : '. $acct->error. '<br/>\n';
+        $this->message .= 'DolWsAccount::addLigne : Erreur : '. $acct->error. '|';
       }
     }
     else {
       $this->success  = FALSE;
-      $this->message .= 'DolWsAccount::addLigne : Erreur : '. $mesg. '<br/>\n';
+      $this->message .= 'DolWsAccount::addLigne : Erreur : '. $mesg. '|';
     }
   }
 }

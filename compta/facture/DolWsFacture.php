@@ -43,13 +43,13 @@ class DolWsFacture {
       $datefacture = dol_mktime(12, 0 , 0, $values['remonth'], $values['reday'], $values['reyear']);
       if (empty($datefacture)) {
         $this->success = FALSE;
-        $this->message .= 'DolWsFacture::createFacture : '. 'Erreur : '. $langs->trans("ErrorFieldRequired",$langs->trans("Date")). '<br/>\n';
+        $this->message .= 'DolWsFacture::createFacture : '. 'Erreur : '. $langs->trans("ErrorFieldRequired",$langs->trans("Date")). '|';
         $error=1;
       }
 
       if (!($values['fac_replacement'] > 0)) {
         $this->success = FALSE;
-        $this->message .= 'DolWsFacture::createFacture : '. 'Erreur : '. $langs->trans("ErrorFieldRequired",$langs->trans("ReplaceInvoice")). '<br/>\n';
+        $this->message .= 'DolWsFacture::createFacture : '. 'Erreur : '. $langs->trans("ErrorFieldRequired",$langs->trans("ReplaceInvoice")). '|';
         $error=1;
       }
 
@@ -81,14 +81,14 @@ class DolWsFacture {
     if ($values['type'] == 2) {
       if (! $values['fac_avoir'] > 0) {
         $this->success = FALSE;
-        $this->message .= 'DolWsFacture::createFacture : '. 'Erreur : '. $langs->trans("ErrorFieldRequired",$langs->trans("CorrectInvoice")). '<br/>\n';
+        $this->message .= 'DolWsFacture::createFacture : '. 'Erreur : '. $langs->trans("ErrorFieldRequired",$langs->trans("CorrectInvoice")). '|';
         $error=1;
       }
 
       $datefacture = dol_mktime(12, 0 , 0, $values['remonth'], $values['reday'], $values['reyear']);
       if (empty($datefacture)) {
         $this->success = FALSE;
-        $this->message .= 'DolWsFacture::createFacture : '. 'Erreur : '. $langs->trans("ErrorFieldRequired",$langs->trans("Date")). '<br/>\n';
+        $this->message .= 'DolWsFacture::createFacture : '. 'Erreur : '. $langs->trans("ErrorFieldRequired",$langs->trans("Date")). '|';
         $error=1;
       }
 
@@ -123,7 +123,7 @@ class DolWsFacture {
       $datefacture = dol_mktime(12, 0 , 0, $values['remonth'], $values['reday'], $values['reyear']);
       if (empty($datefacture)) {
         $this->success = FALSE;
-        $this->message .= 'DolWsFacture::createFacture : '. 'Erreur : '. $langs->trans("ErrorFieldRequired",$langs->trans("Date")). '<br/>\n';
+        $this->message .= 'DolWsFacture::createFacture : '. 'Erreur : '. $langs->trans("ErrorFieldRequired",$langs->trans("Date")). '|';
         $error=1;
       }
 
@@ -149,7 +149,7 @@ class DolWsFacture {
       $datefacture = dol_mktime(12, 0 , 0, $values['remonth'], $values['reday'], $values['reyear']);
       if (empty($datefacture)) {
         $this->success = FALSE;
-        $this->message .= 'DolWsFacture::createFacture : '. 'Erreur : '. $langs->trans("ErrorFieldRequired",$langs->trans("Date")). '<br/>\n';
+        $this->message .= 'DolWsFacture::createFacture : '. 'Erreur : '. $langs->trans("ErrorFieldRequired",$langs->trans("Date")). '|';
         $error=1;
       }
 
@@ -292,13 +292,13 @@ class DolWsFacture {
     if ($facid > 0 && !$error) {
       $db->commit();
       $this->success  = TRUE;
-      $this->message .= 'Facture créée avec succes : '. $facid. '.<br/>\n';
+      $this->message .= 'Facture créée avec succes : '. $facid. '.|';
       $this->data     = $facid;
     }
     else {
       $db->rollback();
       $this->success  = FALSE;
-      $this->message .= 'DolWsFacture::createFacture : Erreur : '. $facture->error. $db->error(). '<br/>\n';
+      $this->message .= 'DolWsFacture::createFacture : Erreur : '. $facture->error. $db->error(). '|';
     }
   }
 }
