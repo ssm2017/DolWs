@@ -49,11 +49,12 @@ class DolWsPaiement {
         // Insertion dans llx_bank
         $label = "(CustomerInvoicePayment)";
         $acc = new Account($db, $values['accountid']);
+        $acc->rowid = $values['accountid'];
 
         $bank_line_id = $acc->addline(
           $paiement->datepaye,
           $paiement->paiementid,  // Payment mode id or code ("CHQ or VIR for example")
-          $label,
+          $values['label'],
           $values['totalpaiement'],
           $paiement->num_paiement,
           '',
@@ -90,7 +91,7 @@ class DolWsPaiement {
         }
         else {
           $this->success = FALSE;
-          $this->message .= 'DolWsPaiement::createPaiement : '. 'Erreur : Entrée sur le compte echec.'. $paiement->error. '|';
+          $this->message .= 'DolWsPaiement::createPaiement : '. 'Erreur : Entrée sur le compte echec.'. $acc->error. '|';
           $error++;
         }
       }
@@ -103,7 +104,6 @@ class DolWsPaiement {
 
     if ($error == 0) {
       $db->commit();
-      $loc = DOL_URL_ROOT.'/compta/paiement/fiche.php?id='.$paiement_id;
       $this->success = TRUE;
       $this->message .= 'DolWsPaiement::createPaiement : '. 'Paiement effectué : '. $paiement_id. '|';
       $this->data = $paiement_id;

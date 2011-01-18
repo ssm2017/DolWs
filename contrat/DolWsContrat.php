@@ -114,9 +114,9 @@ class DolWsContrat {
       $contrat = new Contrat($db);
       $ret = $contrat->fetch($values["contrat_id"]);
       if ($ret < 0) {
-        dol_print_error($db, $commande->error);
+        dol_print_error($db, $contrat->error);
         $this->success = FALSE;
-        $this->message .= 'addLigne : '. 'error'. $commande->error;
+        $this->message .= 'addLigne : '. 'error'. $contrat->error;
         return;
       }
       $ret = $contrat->fetch_client();
