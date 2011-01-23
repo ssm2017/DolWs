@@ -21,7 +21,7 @@ $langs->load('banks');
 class DolWsPaiement {
   var $success  = FALSE;
   var $message  = '';
-  var $data     = '';
+  var $data     = array();
 
   function createPaiement($values) {
     global $conf, $langs, $db, $user;
@@ -46,72 +46,98 @@ class DolWsPaiement {
 
     if ($paiement_id > 0) {
       if ($conf->banque->enabled) {
-        // Insertion dans llx_bank
-        $label = "(CustomerInvoicePayment)";
-        $acc = new Account($db, $values['accountid']);
-        $acc->rowid = $values['accountid'];
-
-        $bank_line_id = $acc->addline(
-          $paiement->datepaye,
-          $paiement->paiementid,  // Payment mode id or code ("CHQ or VIR for example")
-          $values['label'],
-          $values['totalpaiement'],
-          $paiement->num_paiement,
-          '',
-          $user,
-          $values['chqemetteur'],
-          $values['chqbank']
-        );
-
-        // Mise a jour fk_bank dans llx_paiement.
-        // On connait ainsi le paiement qui a genere l'ecriture bancaire
-        if ($bank_line_id > 0) {
-          $paiement->update_fk_bank($bank_line_id);
-          // Mise a jour liens (pour chaque facture concernees par le paiement)
-          foreach ($paiement->amounts as $key => $value) {
-            $facid = $key;
-            $fac = new Facture($db);
-            $fac->fetch($facid);
-            $fac->fetch_client();
-            $acc->add_url_line(
-              $bank_line_id,
-              $paiement_id,
-              DOL_URL_ROOT.'/compta/paiement/fiche.php?id=',
-              '(paiement)',
-              'payment'
-            );
-            $acc->add_url_line(
-              $bank_line_id,
-              $fac->client->id,
-              DOL_URL_ROOT.'/compta/fiche.php?socid=',
-              $fac->client->nom,
-              'company'
-            );
+        if (count($values['lines'])) {
+          foreach ($values['lines'] as $line) {
+            $this->addAccountLigne($line, $paiement);
+            if (!$this->success) {
+              $error++;
+            }
           }
         }
         else {
-          $this->success = FALSE;
-          $this->message .= 'DolWsPaiement::createPaiement : '. 'Erreur : Entrée sur le compte echec.'. $acc->error. '|';
-          $error++;
+          $this->addAccountLigne($values, $paiement);
+          if (!$this->success) {
+            $error++;
+          }
         }
       }
     }
     else {
       $this->success = FALSE;
-      $this->message .= 'DolWsPaiement::createPaiement b: '. 'Erreur : '. $paiement->error. '|';
+      $this->message .= 'DolWsPaiement::createPaiement : '. 'Erreur : '. $paiement->error. '|';
       $error++;
     }
 
     if ($error == 0) {
       $db->commit();
       $this->success = TRUE;
-      $this->message .= 'DolWsPaiement::createPaiement : '. 'Paiement effectué : '. $paiement_id. '|';
-      $this->data = $paiement_id;
+      $this->message .= 'DolWsPaiement::createPaiement : '. 'Paiement effectué : '. $paiement->id. '|';
+      $this->data['paiement']['id']   = $paiement->id;
+      $this->data['paiement']['obj']  = $paiement;
     }
     else {
       $db->rollback();
       $this->success = FALSE;
-      $this->message .= 'DolWsPaiement::createPaiement c: '. 'Erreur : '. $paiement->error. '|';
+      $this->message .= 'DolWsPaiement::createPaiement : '. 'Erreur : '. $paiement->error. '|';
+    }
+  }
+
+  function addAccountLigne($values, $paiement) {
+    global $conf, $langs, $db, $user;
+
+    // Insertion dans llx_bank
+    $acc = new Account($db, $values['accountid']);
+    $acc->rowid = $values['accountid'];
+
+    $bank_line_id = $acc->addline(
+      $paiement->datepaye,
+      $paiement->paiementid,  // Payment mode id or code ("CHQ or VIR for example")
+      $values['label'],
+      $values['totalpaiement'],
+      $paiement->num_paiement,
+      '',
+      $user,
+      $values['chqemetteur'],
+      $values['chqbank']
+    );
+
+    // Mise a jour fk_bank dans llx_paiement.
+    // On connait ainsi le paiement qui a genere l'ecriture bancaire
+    if ($bank_line_id > 0) {
+      $paiement->update_fk_bank($bank_line_id);
+      // Mise a jour liens (pour chaque facture concernees par le paiement)
+      foreach ($paiement->amounts as $key => $value) {
+        $facid = $key;
+        $fac = new Facture($db);
+        $fac->fetch($facid);
+        $fac->fetch_client();
+        $acc->add_url_line(
+          $bank_line_id,
+          $paiement->id,
+          DOL_URL_ROOT.'/compta/paiement/fiche.php?id=',
+          '(paiement)',
+          'payment'
+        );
+        $acc->add_url_line(
+          $bank_line_id,
+          $fac->client->id,
+          DOL_URL_ROOT.'/compta/fiche.php?socid=',
+          $fac->client->nom,
+          'company'
+        );
+      }
+      $this->success = TRUE;
+      $this->data['line']['id']       = $bank_line_id;
+      $this->data['account']['id']    = $acc->id;
+      $this->data['account']['obj']   = $acc;
+      $this->data['paiement']['id']   = $paiement->id;
+      $this->data['paiement']['obj']  = $paiement;
+      $this->data['facture']['id']    = $fac->id;
+      $this->data['facture']['obj']   = $fac;
+    }
+    else {
+      $this->success = FALSE;
+      $this->message .= 'DolWsPaiement::createPaiement : '. 'Erreur : Entrée sur le compte echec.'. $acc->error. '|';
     }
   }
 }

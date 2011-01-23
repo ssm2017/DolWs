@@ -24,7 +24,7 @@ $langs->load("products");
 class DolWsContrat {
   var $success  = FALSE;
   var $message  = '';
-  var $data     = '';
+  var $data     = array();
 
   function createContrat($values) {
     global $conf, $langs, $db, $user;
@@ -56,11 +56,11 @@ class DolWsContrat {
     }
 
     // Param dates
-    $date_contrat='';
-    $date_start_update='';
-    $date_end_update='';
-    $date_start_real_update='';
-    $date_end_real_update='';
+    $date_contrat           = '';
+    $date_start_update      = '';
+    $date_end_update        = '';
+    $date_start_real_update = '';
+    $date_end_real_update   = '';
     if ($values["date_start_updatemonth"] && $values["date_start_updateday"] && $values["date_start_updateyear"]) {
       $date_start_update=dol_mktime($values["date_start_updatehour"], $values["date_start_updatemin"], 0, $values["date_start_updatemonth"], $values["date_start_updateday"], $values["date_start_updateyear"]);
     }
@@ -91,13 +91,15 @@ class DolWsContrat {
     $contrat->ref            = trim($values["ref"]);
 
     $result = $contrat->create($user,$langs,$conf);
+
     if ($result > 0) {
       if ($values['valide']) {
         $contrat->validate($user, $langs, $conf);
       }
       $this->success = TRUE;
       $this->message .= 'createContrat : '. 'Le contrat a été créé : '. $contrat->id. '|';
-      $this->data = $contrat->id;
+      $this->data['contrat']['id'] = $contrat->id;
+      $this->data['contrat']['obj'] = $contrat;
     }
     else {
       $this->success = FALSE;
@@ -150,8 +152,10 @@ class DolWsContrat {
         $prod = new Product($db, $values['p_idprod']);
         $prod->fetch($values['p_idprod']);
 
-        $tva_tx = get_default_tva($mysoc,$contrat->client,$prod->id);
-        $tva_npr = get_default_npr($mysoc,$contrat->client,$prod->id);
+        $tva_tx   = get_default_tva($mysoc,$contrat->client,$prod->id);
+        $tva_npr  = get_default_npr($mysoc,$contrat->client,$prod->id);
+        $tva_tx   = $tva_tx < 0 ? 0 : $tva_tx;
+        $tva_npr  = $tva_npr < 0 ? 0 : $tva_npr;
 
         // On defini prix unitaire
         if ($conf->global->PRODUIT_MULTIPRICES && $contrat->client->price_level) {
@@ -221,7 +225,9 @@ class DolWsContrat {
         }
         $this->success  = TRUE;
         $this->message .= 'DolWsContrat : addLigne : '. 'Line added : '. $last->id. '|';
-        $this->data     = $result;
+        $this->data['line']['id'] = $last->id;
+        $this->data['contrat']['id'] = $contrat->id;
+        $this->data['contrat']['obj'] = $contrat;
       }
       else {
         $this->success = FALSE;

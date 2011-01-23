@@ -28,7 +28,7 @@ $langs->load('main');
 class DolWsFacture {
   var $success  = FALSE;
   var $message  = '';
-  var $data     = '';
+  var $data     = array();
 
   function createFacture($values) {
     global $conf, $langs, $db, $user;
@@ -293,7 +293,9 @@ class DolWsFacture {
       $db->commit();
       $this->success  = TRUE;
       $this->message .= 'Facture créée avec succes : '. $facid. '.|';
-      $this->data     = $facid;
+      
+      $this->data['facture']['id'] = $facture->id;
+      $this->data['facture']['obj'] = $facture;
     }
     else {
       $db->rollback();

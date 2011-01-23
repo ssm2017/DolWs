@@ -22,7 +22,7 @@ $langs->load("users");
 class DolWsSociete {
   var $success  = FALSE;
   var $message  = '';
-  var $data     = '';
+  var $data     = array();
 
   function createSociete($values) {
     global $conf, $langs, $db, $user;
@@ -138,7 +138,8 @@ class DolWsSociete {
       $db->commit();
       $this->success  = TRUE;
       $this->message .= 'DolWsSociete::createSociete : '. 'La société a été créée : '. $soc->id. '|';
-      $this->data     = $soc->id;
+      $this->data['societe']['id'] = $soc->id;
+      $this->data['societe']['obj'] = $soc;
       return;
     }
     else {
@@ -148,12 +149,18 @@ class DolWsSociete {
       $this->message .= 'DolWsSociete::createSociete : '. 'Erreur : '. $langs->trans($soc->error). "|";
     }
   }
+
   function updateSociete($values) {
     global $conf, $langs, $db, $user;
 
     // Initialization Company Object
     $soc = new Societe($db);
     $soc->fetch($values['socid']);
+    if (!$soc->id) {
+      $this->success = FALSE;
+      $this->message .= "La societe n'existe pas : ". $values['socid']. "|";
+      return;
+    }
 
     if ($values["getcustomercode"]) {
       // We defined value code_client
@@ -168,8 +175,8 @@ class DolWsSociete {
     require_once(DOL_DOCUMENT_ROOT."/lib/functions2.lib.php");
     $error = 0;
 
-    $soc->nom     = isset($values['nom']) ? trim($values['nom']) : $soc->nom;
-    $soc->prenom  = isset($values['prenom']) ? trim($values['prenom']) : $soc->prenom;
+    $soc->nom                   = isset($values['nom']) ? trim($values['nom']) : $soc->nom;
+    $soc->prenom                = isset($values['prenom']) ? trim($values['prenom']) : $soc->prenom;
     if ($values["private"] == 1) {
       $soc->particulier         = $values["private"];
       $soc->nom                 = empty($conf->global->MAIN_FIRSTNAME_NAME_POSITION) ? $soc->prenom.' '. $soc->nom : $soc->nom.' '. $soc->prenom;
@@ -249,7 +256,8 @@ class DolWsSociete {
       $db->commit();
       $this->success  = TRUE;
       $this->message .= 'DolWsSociete::updateSociete : '. 'La société a été mise à jour : '. $values['socid']. '|';
-      $this->data     = $soc->id;
+      $this->data['societe']['id'] = $soc->id;
+      $this->data['societe']['obj'] = $soc;
       return;
     }
     else {
@@ -271,11 +279,11 @@ class DolWsSociete {
 
     $result = $db->query($sql);
     if ($result) {
-      $rowid  = $db->fetch_object($result)->rowid;
+      $rowid  = $db->fetch_object($result);
       if ($rowid) {
         $this->success  = TRUE;
-        $this->message .= 'DolWsSociete::getSocieteId : '. 'Success : '. $rowid. "|";
-        $this->data     = $rowid;
+        $this->message .= 'DolWsSociete::getSocieteId : '. 'Success : '. $rowid->rowid. "|";
+        $this->data['societe']['id'] = $rowid->rowid;
       }
       else {
         $this->success = FALSE;

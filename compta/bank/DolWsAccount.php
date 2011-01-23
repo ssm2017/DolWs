@@ -22,7 +22,7 @@ $langs->load("bills");
 class DolWsAccount {
   var $success  = FALSE;
   var $message  = '';
-  var $data     = '';
+  var $data     = array();
 
   function addLigne($values) {
     global $conf, $langs, $db, $user;
@@ -40,26 +40,31 @@ class DolWsAccount {
     $label      = $values["label"];
     $cat1       = $values["cat1"];
 
-    if (!$dateop)    $mesg = $langs->trans("ErrorFieldRequired",$langs->trans("Date"));
-    if (!$operation) $mesg = $langs->trans("ErrorFieldRequired",$langs->trans("Type"));
-    if (!$amount)    $mesg = $langs->trans("ErrorFieldRequired",$langs->trans("Amount"));
+    if (!$dateop)    $mesg = $langs->trans("ErrorFieldRequired1",$langs->trans("Date"));
+    if (!$operation) $mesg = $langs->trans("ErrorFieldRequired2",$langs->trans("Type"));
+    if (!$amount)    $mesg = $langs->trans("ErrorFieldRequired3",$langs->trans("Amount"));
 
     if (!$mesg) {
       $acct   = new Account($db);
       $result = $acct->fetch($values['accountid']);
       
       $insertid = $acct->addline($dateop, $operation, $label, $amount, $num_chq, $cat1, $user, '', '');
+
       if ($insertid > 0) {
-        if ($values['url_line_id']) {
-          $inserturlid = $acct->add_url_line($insertid, $values['url_line_id'], $values['url_line_url'], $values['url_line_label'], $values['url_line_type']);
-          if ($insertid < 1) {
-            $this->success  = FALSE;
-            $this->message .= 'DolWsAccount::addLigne : Erreur : '. $acct->error;
-           }
+        if (count($values['url_lines'])) {
+          foreach($values['url_lines'] as $url_line) {
+            $inserturlid = $acct->add_url_line($insertid, $url_line['id'], $url_line['url'], $url_line['label'], $url_line['type']);
+            if ($insertid < 1) {
+              $this->success  = FALSE;
+              $this->message .= 'DolWsAccount::addLigne : Erreur : '. $acct->error;
+            }
+          }
         }
         $this->success  = TRUE;
-        $this->message .= 'DolWsAccount::addLigne : Entrée ajoutée avec succes.';
-        $this->data     = $insertid;
+        $this->message .= 'DolWsAccount::addLigne : Entrée ajoutée avec succes : '. $insertid. '|';
+        $this->data['account']['id'] = $acct->id;
+        $this->data['account']['obj'] = $acct;
+        $this->data['account']['last_line'] = $insertid;
       }
       else {
         $this->success  = FALSE;

@@ -29,7 +29,7 @@ class DolWsAdherents {
 
   var $success  = FALSE;
   var $message  = '';
-  var $data     = '';
+  var $data     = array();
 
   function createAdherent($values) {
     global $conf, $langs, $db;
@@ -97,14 +97,14 @@ class DolWsAdherents {
 
     // Check parameters
     if (empty($adh->morphy) ||$adh->morphy == "-1") {
-      $this->message .= 'createAdherent : '. $langs->trans("ErrorFieldRequired",$langs->transnoentitiesnoconv("Person"))."|";
+      $this->message .= 'DolWsAdherents::createAdherent : '. $langs->trans("ErrorFieldRequired",$langs->transnoentitiesnoconv("Person"))."|";
       $this->success = FALSE;
       return;
     }
 
     // Test si le login existe deja
     if (empty($adh->login)) {
-      $this->message .= 'createAdherent : '. $langs->trans("ErrorFieldRequired",$langs->trans("Login"))."|";
+      $this->message .= 'DolWsAdherents::createAdherent : '. $langs->trans("ErrorFieldRequired",$langs->trans("Login"))."|";
       $this->success = FALSE;
       return;
     }
@@ -115,7 +115,7 @@ class DolWsAdherents {
         $num = $db->num_rows($result);
       }
       if ($num) {
-        $this->message .= 'createAdherent : '. $langs->trans("ErrorLoginAlreadyExists",$login)."|";
+        $this->message .= 'DolWsAdherents::createAdherent : '. $langs->trans("ErrorLoginAlreadyExists",$login)."|";
         $this->success = FALSE;
         return;
       }
@@ -123,39 +123,39 @@ class DolWsAdherents {
 
     if (empty($adh->nom)) {
       $langs->load("errors");
-      $this->message .= 'createAdherent : '. $langs->trans("ErrorFieldRequired",$langs->transnoentities("Lastname"))."|";
+      $this->message .= 'DolWsAdherents::createAdherent : '. $langs->trans("ErrorFieldRequired",$langs->transnoentities("Lastname"))."|";
       $this->success = FALSE;
       return;
     }
 
     if ($adh->morphy != 'mor' && (!isset($adh->prenom) || $adh->prenom=='')) {
       $langs->load("errors");
-      $this->message .= 'createAdherent : '. $langs->trans("ErrorFieldRequired",$langs->transnoentities("Firstname"))."|";
+      $this->message .= 'DolWsAdherents::createAdherent : '. $langs->trans("ErrorFieldRequired",$langs->transnoentities("Firstname"))."|";
       $this->success = FALSE;
       return;
     }
 
     if (! ($adh->typeid > 0)) {  // Keep () before !
-      $this->message .= 'createAdherent : '. $langs->trans("ErrorFieldRequired",$langs->transnoentitiesnoconv("Type"))."|";
+      $this->message .= 'DolWsAdherents::createAdherent : '. $langs->trans("ErrorFieldRequired",$langs->transnoentitiesnoconv("Type"))."|";
       $this->success = FALSE;
       return;
     }
 
     if ($conf->global->ADHERENT_MAIL_REQUIRED && ! isValidEMail($adh->email)) {
       $langs->load("errors");
-      $this->message .= 'createAdherent : '. $langs->trans("ErrorBadEMail",$adh->email)."|";
-      $this->message .= 'createAdherent : '. $adh->email."|";
+      $this->message .= 'DolWsAdherents::createAdherent : '. $langs->trans("ErrorBadEMail",$adh->email)."|";
+      $this->message .= 'DolWsAdherents::createAdherent : '. $adh->email."|";
       $this->success = FALSE;
       return;
     }
 
     if (empty($adh->pass)) {
-      $this->message .= 'createAdherent : '. $langs->trans("ErrorFieldRequired",$langs->transnoentities("Password"))."|";
+      $this->message .= 'DolWsAdherents::createAdherent : '. $langs->trans("ErrorFieldRequired",$langs->transnoentities("Password"))."|";
       $this->success = FALSE;
       return;
     }
 
-    if (isset($adh->public)) $adh->public = 1;
+    //if (isset($adh->public)) $adh->public = 1;
 
     $db->begin();
     $result = $adh->create($user);
@@ -167,20 +167,22 @@ class DolWsAdherents {
         $this->createCardSubscription($values);
       }
       else {
-        $this->message .= 'createAdherent : '. 'Cotisation inferieure a 1.'. "|";
+        $this->message .= 'DolWsAdherents::createAdherent : '. 'Cotisation inferieure a 1.'. "|";
       }
-      
+
       $db->commit();
-      $rowid  = $adh->id;
-      $this->message .= 'createAdherent : '. "Adherent ajouté.|";
-      $this->data = $rowid;
+      $adh->id;
+      $this->message .= 'DolWsAdherents::createAdherent : '. "Adherent ajouté : ". $adh->id. "|";
+      $this->data['adherent']['id'] = $adh->id;
+      $this->data['adherent']['obj'] = $adh;
     }
     else {
       $db->rollback();
-      if ($adh->error) $this->message .= 'createAdherent : '. $adh->error;
-      else $this->message .= 'createAdherent : '. $adh->errors[0];
+      if ($adh->error) $this->message .= 'DolWsAdherents::createAdherent : '. $adh->error;
+      else $this->message .= 'DolWsAdherents::createAdherent : '. $adh->errors[0];
     }
   }
+
   function updateAdherent($values) {
     global $conf, $langs, $db, $user;
 
@@ -191,7 +193,7 @@ class DolWsAdherents {
 
     //$adh->fetch_login($values["member_login"]);
     if (!$adh->id) {
-      $this->message .= 'DolWsAdherents:updateAdherent : '. "L'adherent n'existe pas.|";
+      $this->message .= 'DolWsAdherents:updateAdherent : '. "L'adherent ". $values['adhid']. " n'existe pas.|";
       if ($values['create']) {
         $this->createAdherent($values);
       }
@@ -274,23 +276,23 @@ class DolWsAdherents {
       }
 
       $result = $adh->update($user, 0, $nosyncuser, $nosyncuserpass);
+
       if ($result >= 0 && ! sizeof($adh->errors)) {
+        $this->success = TRUE;
         $this->message .= 'DolWsAdherents::updateAdherent : '. "L'adhérent a été mis à jour : ". $adh->id. '|';
-        if ($adh->cotisation > 0) {
-          $values['adhid'] = $adh->id;
-          $this->createCardSubscription($values);
-        }
-        else {
-          $this->message .= 'DolWsAdherents::createAdherent : '. 'Cotisation inferieure a 1.'. "|";
-        }
+        $this->data['adherent']['id'] = $adh->id;
+        $this->data['adherent']['obj'] = $adh;
+        return;
       }
       else {
         if ($adh->error) {
+          $this->success = FALSE;
           $errmsg=$adh->error;
         }
         else {
           foreach($adh->errors as $error) {
             if ($errmsg) $errmsg.='|';
+            $this->success = FALSE;
             $errmsg.=$error;
           }
         }
@@ -316,7 +318,7 @@ class DolWsAdherents {
     global $conf, $langs, $db;
     $langs->load("banks");
 
-    $adh = new Adherent($db);
+    $adh  = new Adherent($db);
     $adho = new AdherentOptions($db);
     $adht = new AdherentType($db);
 
@@ -325,7 +327,8 @@ class DolWsAdherents {
     if ($result < 1) {
       $this->success = FALSE;
       $this->message .= 'DolWsAdherents::createCardSubscription : '. 'Erreur : '. $adh->error. '|';
-      $this->data = $values['adhid'];
+      $this->data['adherent']['id'] = $adh->id;
+      $this->data['adherent']['obj'] = $adh;
       return;
     }
 
@@ -335,20 +338,46 @@ class DolWsAdherents {
     $datecotisation = 0;
     $datesubend     = 0;
     if (isset($values["reyear"]) && isset($values["remonth"]) && isset($values["reday"])) {
-      $datecotisation = dol_mktime(0, 0, 0, $values["remonth"], $values["reday"], $values["reyear"]);
+      $datecotisation = dol_mktime(12, 0, 0, $values["remonth"], $values["reday"], $values["reyear"]);
     }
     if (isset($values["endyear"]) && isset($values["endmonth"]) && isset($values["endday"])) {
-      $datesubend = dol_mktime(0, 0, 0, $values["endmonth"], $values["endday"], $values["endyear"]);
+      $datesubend = dol_mktime(12, 0, 0, $values["endmonth"], $values["endday"], $values["endyear"]);
     }
 
     if (!$datecotisation) {
       $this->success = FALSE;
       $this->message .= 'DolWsAdherents::createCardSubscription : '. $langs->trans("BadDateFormat"). '|';
-      $this->data = $datecotisation;
+      $this->data['adherent']['datecotisation'] = $datecotisation;
       return;
     }
+    // check if date already exists and if yes, adds one year
+    $defaultdelay = 1;
+    $defaultdelayunit = 'y';
+    $result = $db->query("SELECT rowid FROM ". MAIN_DB_PREFIX. "cotisation WHERE dateadh='". $db->idate($datecotisation). "' AND fk_adherent=". $adh->id);
+    if ($result) {
+      $row = $db->fetch_object($result);
+      if ($row) {
+        // this date exists so we need to take the highest date and add 1 year
+        $result2 = $db->query("SELECT datef FROM ". MAIN_DB_PREFIX. "cotisation WHERE fk_adherent=". $adh->id. " ORDER BY dateadh DESC");
+        if ($result2) {
+          $row2 = $db->fetch_object($result2);
+          if ($row2) {
+            $datecotisation = $db->jdate($row2->datef);
+          }
+        }
+        //$datecotisation += 31622400; // 3600*24*365+(3600*24)
+        //$datecotisation = dol_time_plus_duree($datecotisation,+1,'Y');
+        //$datecotisation = dol_time_plus_duree($datecotisation,+1,'d');
+        if ($datesubend) {
+          //$datesubend = $datecotisation + 31536000; // (3600*24*365)-(3600*24)
+          //$datesubend = dol_time_plus_duree($datecotisation,+1,'Y');
+          //$datesubend = dol_time_plus_duree($datesubend,+1,'d');
+          $datesubend = dol_time_plus_duree($datecotisation,$defaultdelay,$defaultdelayunit);
+        }
+      }
+    }
     if (!$datesubend) {
-      $datesubend=dol_time_plus_duree(dol_time_plus_duree($datecotisation,$defaultdelay,$defaultdelayunit),-1,'d');
+      $datesubend = dol_time_plus_duree(dol_time_plus_duree($datecotisation,$defaultdelay,$defaultdelayunit),-1,'d');
     }
 
     // Payment informations
@@ -392,19 +421,22 @@ class DolWsAdherents {
 
     if ($crowid > 0) {
       $db->commit();
-      $this->success = TRUE;
+      $this->crowid   = $crowid;
+      $this->success  = TRUE;
       $this->message .= 'DolWsAdherents::createCardSubscription : '. 'Cotisation ajoutée avec succes : '. $crowid. '|';
-      $this->data = $crowid;
+      $this->data['adherent']['id'] = $adh->id;
+      $this->data['adherent']['obj'] = $adh;
+      $this->data['cotisation']['id'] = $crowid;
       // Envoi mail
       if ($values["sendmail"]) {
         $result = $adh->send_an_email($conf->global->ADHERENT_MAIL_COTIS,$conf->global->ADHERENT_MAIL_COTIS_SUBJECT,array(),array(),array(),"","",0,-1);
-        if ($result < 0) $this->message .= 'createCardSubscription : '. $adh->error. '|';
+        if ($result < 0) $this->message .= 'DolWsAdherents::createCardSubscription : '. $adh->error. '|';
       }
     }
     else {
       $db->rollback();
       $this->success = FALSE;
-      $this->message .= 'DolWsAdherents::createCardSubscription : '. 'Erreur : '. $adh->error. '|';
+      $this->message .= 'DolWsAdherents::createCardSubscription : '. 'Erreur : '. $adh->error. ' '. $db->error. '|';
     }
   }
   function getAdherentId($field, $value, $where = '', $options = FALSE) {
@@ -415,10 +447,10 @@ class DolWsAdherents {
     }
 
     if ($options) {
-      $sql = "SELECT fk_member FROM ".MAIN_DB_PREFIX. "adherent_options WHERE $where";
+      $sql = "SELECT fk_member FROM ". MAIN_DB_PREFIX. "adherent_options WHERE $where";
     }
     else {
-      $sql = "SELECT rowid FROM ".MAIN_DB_PREFIX. "adherent WHERE $where";
+      $sql = "SELECT rowid FROM ". MAIN_DB_PREFIX. "adherent WHERE $where";
     }
 
     $result = $db->query($sql);
@@ -433,7 +465,7 @@ class DolWsAdherents {
         }
         $this->success = TRUE;
         $this->message .= 'DolWsAdherents::getAdherentId : '. 'Success : '. $rowid. "|";
-        $this->data = $rowid;
+        $this->data['adherent']['id'] = $rowid;
       }
       else {
         $this->success = FALSE;
