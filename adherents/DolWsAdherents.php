@@ -252,6 +252,7 @@ class DolWsAdherents {
       // Get status and public property
       $adh->statut      = (isset($values["statut"]) && $values["statut"] != $adh->statut) ? $values["statut"] : $adh->statut;
       $adh->public      = (isset($values["public"]) && $values["public"] != $adh->public) ? $values["public"] : $adh->public;
+      $adh->fk_soc      = (isset($values["socid"]) && $values["socid"] != $adh->socid) ? $values["socid"] : $adh->socid;
 
       $adh->cotisation  = isset($values["cotisation"]) ? $values["cotisation"] : 0;
 
@@ -443,7 +444,7 @@ class DolWsAdherents {
     global $conf, $langs, $db, $user;
 
     if (empty($where)) {
-      $where = $field. "=". $value;
+      $where = "TRIM(". $field. ")=". $value;
     }
 
     if ($options) {

@@ -126,7 +126,7 @@ class DolWsContact {
     global $conf, $langs, $db, $user;
 
     if (empty($where)) {
-      $where = $field. "=". $value;
+      $where = "TRIM(". $field. ")=". $value;
     }
 
     $sql = "SELECT rowid FROM ".MAIN_DB_PREFIX. "socpeople WHERE $where";
